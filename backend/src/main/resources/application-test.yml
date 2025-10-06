@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    # Testcontainers will provide the datasource details
+    url:
+    username:
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: false
