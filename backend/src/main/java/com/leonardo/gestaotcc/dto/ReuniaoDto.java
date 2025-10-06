@@ -2,62 +2,42 @@ package com.leonardo.gestaotcc.dto;
 
 import com.leonardo.gestaotcc.enums.TipoReuniao;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class ReuniaoDto {
 
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class ReuniaoCreateRequest {
-        @NotBlank(message = "O ID do TCC não pode estar em branco")
+        @NotNull(message = "ID do TCC é obrigatório")
         private UUID tccId;
+
+        @NotNull(message = "Data e hora da reunião são obrigatórias")
         private Instant dataHora;
-        @NotBlank(message = "O tema não pode estar em branco")
+
+        @NotBlank(message = "Tema da reunião é obrigatório")
         private String tema;
+
         private String resumo;
+
+        @NotNull(message = "Tipo de reunião é obrigatório")
         private TipoReuniao tipo;
-
-        public UUID getTccId() {
-            return tccId;
-        }
-
-        public void setTccId(UUID tccId) {
-            this.tccId = tccId;
-        }
-
-        public Instant getDataHora() {
-            return dataHora;
-        }
-
-        public void setDataHora(Instant dataHora) {
-            this.dataHora = dataHora;
-        }
-
-        public String getTema() {
-            return tema;
-        }
-
-        public void setTema(String tema) {
-            this.tema = tema;
-        }
-
-        public String getResumo() {
-            return resumo;
-        }
-
-        public void setResumo(String resumo) {
-            this.resumo = resumo;
-        }
-
-        public TipoReuniao getTipo() {
-            return tipo;
-        }
-
-        public void setTipo(TipoReuniao tipo) {
-            this.tipo = tipo;
-        }
     }
 
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class ReuniaoResponse {
         private UUID id;
         private UUID tccId;
@@ -65,53 +45,7 @@ public class ReuniaoDto {
         private String tema;
         private String resumo;
         private TipoReuniao tipo;
-
-        public UUID getId() {
-            return id;
-        }
-
-        public void setId(UUID id) {
-            this.id = id;
-        }
-
-        public UUID getTccId() {
-            return tccId;
-        }
-
-        public void setTccId(UUID tccId) {
-            this.tccId = tccId;
-        }
-
-        public Instant getDataHora() {
-            return dataHora;
-        }
-
-        public void setDataHora(Instant dataHora) {
-            this.dataHora = dataHora;
-        }
-
-        public String getTema() {
-            return tema;
-        }
-
-        public void setTema(String tema) {
-            this.tema = tema;
-        }
-
-        public String getResumo() {
-            return resumo;
-        }
-
-        public void setResumo(String resumo) {
-            this.resumo = resumo;
-        }
-
-        public TipoReuniao getTipo() {
-            return tipo;
-        }
-
-        public void setTipo(TipoReuniao tipo) {
-            this.tipo = tipo;
-        }
+        private LocalDateTime criadoEm;
+        private LocalDateTime atualizadoEm;
     }
 }

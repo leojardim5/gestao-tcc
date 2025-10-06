@@ -7,10 +7,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 public interface ComentarioService {
-
-    ComentarioDto.ComentarioResponse add(ComentarioDto.ComentarioCreateRequest comentarioCreateRequest, UUID autorId);
-
+    ComentarioDto.ComentarioResponse add(ComentarioDto.ComentarioCreateRequest request);
     void delete(UUID id);
-
     Page<ComentarioDto.ComentarioResponse> listBySubmissao(UUID submissaoId, Pageable pageable);
 }

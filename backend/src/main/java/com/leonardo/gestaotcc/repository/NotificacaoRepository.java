@@ -10,8 +10,6 @@ import java.util.UUID;
 
 @Repository
 public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> {
-
-    Page<Notificacao> findByUsuarioIdAndLida(UUID usuarioId, boolean lida, Pageable pageable);
-
     Page<Notificacao> findByUsuarioId(UUID usuarioId, Pageable pageable);
+    Page<Notificacao> findByUsuarioIdAndLida(UUID usuarioId, boolean lida, Pageable pageable);
 }

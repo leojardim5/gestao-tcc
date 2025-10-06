@@ -8,10 +8,8 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 public interface SubmissaoService {
-
-    SubmissaoDto.SubmissaoResponse create(SubmissaoDto.SubmissaoCreateRequest submissaoCreateRequest);
-
+    SubmissaoDto.SubmissaoResponse create(SubmissaoDto.SubmissaoCreateRequest request);
     SubmissaoDto.SubmissaoResponse decide(UUID submissaoId, StatusSubmissao status);
-
     Page<SubmissaoDto.SubmissaoResponse> listByTcc(UUID tccId, Pageable pageable);
+    SubmissaoDto.SubmissaoResponse get(UUID id);
 }

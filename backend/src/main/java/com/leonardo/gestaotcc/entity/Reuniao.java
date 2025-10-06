@@ -2,20 +2,32 @@ package com.leonardo.gestaotcc.entity;
 
 import com.leonardo.gestaotcc.enums.TipoReuniao;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.UuidGenerator;
 
 import java.time.Instant;
-import java.util.Objects;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "reunioes")
 public class Reuniao {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
+    @UuidGenerator
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tcc_id", nullable = false)
     private Tcc tcc;
 
@@ -32,77 +44,11 @@ public class Reuniao {
     @Column(nullable = false)
     private TipoReuniao tipo;
 
-    public Reuniao() {
-    }
+    @CreationTimestamp
+    @Column(name = "criado_em", updatable = false)
+    private LocalDateTime criadoEm;
 
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Tcc getTcc() {
-        return tcc;
-    }
-
-    public void setTcc(Tcc tcc) {
-        this.tcc = tcc;
-    }
-
-    public Instant getDataHora() {
-        return dataHora;
-    }
-
-    public void setDataHora(Instant dataHora) {
-        this.dataHora = dataHora;
-    }
-
-    public String getTema() {
-        return tema;
-    }
-
-    public void setTema(String tema) {
-        this.tema = tema;
-    }
-
-    public String getResumo() {
-        return resumo;
-    }
-
-    public void setResumo(String resumo) {
-        this.resumo = resumo;
-    }
-
-    public TipoReuniao getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(TipoReuniao tipo) {
-        this.tipo = tipo;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Reuniao reuniao = (Reuniao) o;
-        return Objects.equals(id, reuniao.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
-    @Override
-    public String toString() {
-        return "Reuniao{" +
-                "id=" + id +
-                ", tcc=" + tcc.getId() +
-                ", dataHora=" + dataHora +
-                ", tema='" + tema + "'" +
-                '}';
-    }
+    @UpdateTimestamp
+    @Column(name = "atualizado_em")
+    private LocalDateTime atualizadoEm;
 }

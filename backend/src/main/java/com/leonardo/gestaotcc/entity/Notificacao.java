@@ -2,21 +2,31 @@ package com.leonardo.gestaotcc.entity;
 
 import com.leonardo.gestaotcc.enums.TipoNotificacao;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.UUID;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "notificacoes")
 public class Notificacao {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
+    @UuidGenerator
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
@@ -27,82 +37,14 @@ public class Notificacao {
     @Column(nullable = false)
     private String mensagem;
 
-    private boolean lida;
+    @Builder.Default
+    private boolean lida = false;
 
     @CreationTimestamp
+    @Column(name = "criada_em", updatable = false)
     private LocalDateTime criadaEm;
 
-    public Notificacao() {
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Usuario getUsuario() {
-        return usuario;
-    }
-
-    public void setUsuario(Usuario usuario) {
-        this.usuario = usuario;
-    }
-
-    public TipoNotificacao getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(TipoNotificacao tipo) {
-        this.tipo = tipo;
-    }
-
-    public String getMensagem() {
-        return mensagem;
-    }
-
-    public void setMensagem(String mensagem) {
-        this.mensagem = mensagem;
-    }
-
-    public boolean isLida() {
-        return lida;
-    }
-
-    public void setLida(boolean lida) {
-        this.lida = lida;
-    }
-
-    public LocalDateTime getCriadaEm() {
-        return criadaEm;
-    }
-
-    public void setCriadaEm(LocalDateTime criadaEm) {
-        this.criadaEm = criadaEm;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Notificacao that = (Notificacao) o;
-        return Objects.equals(id, that.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
-    @Override
-    public String toString() {
-        return "Notificacao{" +
-                "id=" + id +
-                ", usuario=" + usuario.getId() +
-                ", tipo=" + tipo +
-                ", lida=" + lida +
-                '}';
-    }
+    @UpdateTimestamp
+    @Column(name = "atualizada_em")
+    private LocalDateTime atualizadaEm;
 }

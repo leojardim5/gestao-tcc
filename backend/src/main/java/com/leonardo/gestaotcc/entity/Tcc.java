@@ -2,20 +2,29 @@ package com.leonardo.gestaotcc.entity;
 
 import com.leonardo.gestaotcc.enums.StatusTcc;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Objects;
 import java.util.UUID;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "tccs")
 public class Tcc {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
+    @UuidGenerator
     private UUID id;
 
     @Column(nullable = false)
@@ -28,8 +37,10 @@ public class Tcc {
     @Column(nullable = false)
     private StatusTcc status;
 
+    @Column(name = "data_inicio")
     private LocalDate dataInicio;
 
+    @Column(name = "data_entrega_prevista")
     private LocalDate dataEntregaPrevista;
 
     @OneToOne
@@ -45,121 +56,10 @@ public class Tcc {
     private Usuario coorientador;
 
     @CreationTimestamp
+    @Column(name = "criado_em", updatable = false)
     private LocalDateTime criadoEm;
 
     @UpdateTimestamp
+    @Column(name = "atualizado_em")
     private LocalDateTime atualizadoEm;
-
-    public Tcc() {
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getTitulo() {
-        return titulo;
-    }
-
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
-    }
-
-    public String getResumo() {
-        return resumo;
-    }
-
-    public void setResumo(String resumo) {
-        this.resumo = resumo;
-    }
-
-    public StatusTcc getStatus() {
-        return status;
-    }
-
-    public void setStatus(StatusTcc status) {
-        this.status = status;
-    }
-
-    public LocalDate getDataInicio() {
-        return dataInicio;
-    }
-
-    public void setDataInicio(LocalDate dataInicio) {
-        this.dataInicio = dataInicio;
-    }
-
-    public LocalDate getDataEntregaPrevista() {
-        return dataEntregaPrevista;
-    }
-
-    public void setDataEntregaPrevista(LocalDate dataEntregaPrevista) {
-        this.dataEntregaPrevista = dataEntregaPrevista;
-    }
-
-    public Usuario getAluno() {
-        return aluno;
-    }
-
-    public void setAluno(Usuario aluno) {
-        this.aluno = aluno;
-    }
-
-    public Usuario getOrientador() {
-        return orientador;
-    }
-
-    public void setOrientador(Usuario orientador) {
-        this.orientador = orientador;
-    }
-
-    public Usuario getCoorientador() {
-        return coorientador;
-    }
-
-    public void setCoorientador(Usuario coorientador) {
-        this.coorientador = coorientador;
-    }
-
-    public LocalDateTime getCriadoEm() {
-        return criadoEm;
-    }
-
-    public void setCriadoEm(LocalDateTime criadoEm) {
-        this.criadoEm = criadoEm;
-    }
-
-    public LocalDateTime getAtualizadoEm() {
-        return atualizadoEm;
-    }
-
-    public void setAtualizadoEm(LocalDateTime atualizadoEm) {
-        this.atualizadoEm = atualizadoEm;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Tcc tcc = (Tcc) o;
-        return Objects.equals(id, tcc.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
-
-    @Override
-    public String toString() {
-        return "Tcc{" +
-                "id=" + id +
-                ", titulo='" + titulo + '\'' +
-                ", status=" + status +
-                '}';
-    }
 }

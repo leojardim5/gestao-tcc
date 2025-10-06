@@ -7,10 +7,8 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 public interface ReuniaoService {
-
-    ReuniaoDto.ReuniaoResponse schedule(ReuniaoDto.ReuniaoCreateRequest reuniaoCreateRequest);
-
+    ReuniaoDto.ReuniaoResponse schedule(ReuniaoDto.ReuniaoCreateRequest request);
     void cancel(UUID id);
-
     Page<ReuniaoDto.ReuniaoResponse> listByTcc(UUID tccId, Pageable pageable);
+    ReuniaoDto.ReuniaoResponse get(UUID id);
 }
