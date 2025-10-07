@@ -13,8 +13,7 @@ public interface TccService {
     TccDto.TccResponse update(UUID id, TccDto.TccUpdateRequest request);
     TccDto.TccResponse assignOrientador(UUID tccId, UUID orientadorId);
     TccDto.TccResponse changeStatus(UUID id, StatusTcc newStatus);
-    Page<TccDto.TccResponse> listByAluno(UUID alunoId, Pageable pageable);
-    Page<TccDto.TccResponse> listByOrientador(UUID orientadorId, Pageable pageable);
+    Page<TccDto.TccResponse> listByUsuario(UUID usuarioId, Pageable pageable);
     TccDto.TccResponse get(UUID id);
     Page<TccDto.TccResponse> listAll(Pageable pageable);
 }

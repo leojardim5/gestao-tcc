@@ -116,16 +116,17 @@ public class TccServiceImpl implements TccService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<TccDto.TccResponse> listByAluno(UUID alunoId, Pageable pageable) {
-        return tccRepository.findByAlunoId(alunoId)
-                .map(tcc -> tccRepository.findAll(Pageable.unpaged()).map(tccMapper::toResponseDto))
-                .orElse(Page.empty());
-    }
+    public Page<TccDto.TccResponse> listByUsuario(UUID usuarioId, Pageable pageable) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com ID: " + usuarioId));
 
-    @Override
-    @Transactional(readOnly = true)
-    public Page<TccDto.TccResponse> listByOrientador(UUID orientadorId, Pageable pageable) {
-        return tccRepository.findByOrientadorId(orientadorId, pageable).map(tccMapper::toResponseDto);
+        if (usuario.getPapel() == PapelUsuario.ALUNO) {
+            return tccRepository.findByAlunoId(usuarioId, pageable).map(tccMapper::toResponseDto);
+        } else if (usuario.getPapel() == PapelUsuario.ORIENTADOR) {
+            return tccRepository.findByOrientadorId(usuarioId, pageable).map(tccMapper::toResponseDto);
+        } else {
+            return Page.empty(pageable);
+        }
     }
 
     @Override

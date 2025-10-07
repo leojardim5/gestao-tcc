@@ -7,12 +7,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface TccRepository extends JpaRepository<Tcc, UUID> {
-    Optional<Tcc> findByAlunoId(UUID alunoId);
+    Page<Tcc> findByAlunoId(UUID alunoId, Pageable pageable);
     Page<Tcc> findByOrientadorId(UUID orientadorId, Pageable pageable);
     Page<Tcc> findByStatus(StatusTcc status, Pageable pageable);
     Page<Tcc> findByStatusIn(List<StatusTcc> statuses, Pageable pageable);

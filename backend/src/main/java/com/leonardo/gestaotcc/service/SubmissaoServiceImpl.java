@@ -34,7 +34,7 @@ public class SubmissaoServiceImpl implements SubmissaoService {
         Tcc tcc = tccRepository.findById(request.getTccId())
                 .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + request.getTccId()));
 
-        Optional<Submissao> ultimaSubmissao = submissaoRepository.findTopByTccOrderByVersaoDesc();
+        Optional<Submissao> ultimaSubmissao = submissaoRepository.findTopByTccOrderByVersaoDesc(tcc);
         int proximaVersao = ultimaSubmissao.map(s -> s.getVersao() + 1).orElse(1);
 
         Submissao submissao = submissaoMapper.toEntity(request);

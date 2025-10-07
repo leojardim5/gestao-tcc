@@ -11,6 +11,6 @@ import java.util.UUID;
 
 @Repository
 public interface SubmissaoRepository extends JpaRepository<Submissao, UUID> {
-    Optional<Submissao> findTopByTccOrderByVersaoDesc();
+    Optional<Submissao> findTopByTccOrderByVersaoDesc(Tcc tcc);
     List<Submissao> findByTccOrderByVersaoAsc(Tcc tcc);
 }

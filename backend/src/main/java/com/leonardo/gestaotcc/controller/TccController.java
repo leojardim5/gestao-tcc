@@ -79,25 +79,14 @@ public class TccController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Lista TCCs por ID do aluno", responses = {
+    @Operation(summary = "Lista TCCs por ID de usuário (aluno ou orientador)", responses = {
             @ApiResponse(responseCode = "200", description = "Lista de TCCs retornada com sucesso")
     })
-    @GetMapping(params = "alunoId")
-    public ResponseEntity<Page<TccDto.TccResponse>> listTccsByAluno(
-            @Parameter(description = "ID do aluno") @RequestParam UUID alunoId,
+    @GetMapping("/search")
+    public ResponseEntity<Page<TccDto.TccResponse>> listTccsByUsuario(
+            @Parameter(description = "ID do usuário (pode ser Aluno ou Orientador)") @RequestParam UUID usuarioId,
             Pageable pageable) {
-        Page<TccDto.TccResponse> responsePage = tccService.listByAluno(alunoId, pageable);
-        return ResponseEntity.ok(responsePage);
-    }
-
-    @Operation(summary = "Lista TCCs por ID do orientador", responses = {
-            @ApiResponse(responseCode = "200", description = "Lista de TCCs retornada com sucesso")
-    })
-    @GetMapping(params = "orientadorId")
-    public ResponseEntity<Page<TccDto.TccResponse>> listTccsByOrientador(
-            @Parameter(description = "ID do orientador") @RequestParam UUID orientadorId,
-            Pageable pageable) {
-        Page<TccDto.TccResponse> responsePage = tccService.listByOrientador(orientadorId, pageable);
+        Page<TccDto.TccResponse> responsePage = tccService.listByUsuario(usuarioId, pageable);
         return ResponseEntity.ok(responsePage);
     }
 
