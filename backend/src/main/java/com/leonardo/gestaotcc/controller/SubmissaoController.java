@@ -68,4 +68,14 @@ public class SubmissaoController {
         SubmissaoDto.SubmissaoResponse response = submissaoService.get(id);
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "Busca a última submissão de um TCC", responses = {
+            @ApiResponse(responseCode = "200", description = "Última submissão encontrada"),
+            @ApiResponse(responseCode = "404", description = "Nenhuma submissão encontrada para o TCC")
+    })
+    @GetMapping("/latest")
+    public ResponseEntity<SubmissaoDto.SubmissaoResponse> getLatestSubmissaoByTcc(@RequestParam UUID tccId) {
+        SubmissaoDto.SubmissaoResponse response = submissaoService.getLatestByTcc(tccId);
+        return ResponseEntity.ok(response);
+    }
 }

@@ -83,4 +83,14 @@ public class SubmissaoServiceImpl implements SubmissaoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Submissão não encontrada com ID: " + id));
         return submissaoMapper.toResponseDto(submissao);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SubmissaoDto.SubmissaoResponse getLatestByTcc(UUID tccId) {
+        Tcc tcc = tccRepository.findById(tccId)
+                .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + tccId));
+        Submissao submissao = submissaoRepository.findTopByTccOrderByVersaoDesc(tcc)
+                .orElseThrow(() -> new ResourceNotFoundException("Nenhuma submissão encontrada para o TCC com ID: " + tccId));
+        return submissaoMapper.toResponseDto(submissao);
+    }
 }

@@ -12,4 +12,5 @@ public interface SubmissaoService {
     SubmissaoDto.SubmissaoResponse decide(UUID submissaoId, StatusSubmissao status);
     Page<SubmissaoDto.SubmissaoResponse> listByTcc(UUID tccId, Pageable pageable);
     SubmissaoDto.SubmissaoResponse get(UUID id);
+    SubmissaoDto.SubmissaoResponse getLatestByTcc(UUID tccId);
 }
