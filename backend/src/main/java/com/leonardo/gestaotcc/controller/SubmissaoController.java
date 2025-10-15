@@ -1,8 +1,8 @@
 package com.leonardo.gestaotcc.controller;
 
 import com.leonardo.gestaotcc.dto.SubmissaoDto;
-import com.leonardo.gestaotcc.enums.StatusSubmissao;
 import com.leonardo.gestaotcc.service.SubmissaoService;
+import com.leonardo.gestaotcc.service.FileStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -24,6 +25,7 @@ import java.util.UUID;
 public class SubmissaoController {
 
     private final SubmissaoService submissaoService;
+    private final FileStorageService fileStorageService;
 
     @Operation(summary = "Cria uma nova submissão para um TCC", responses = {
             @ApiResponse(responseCode = "201", description = "Submissão criada com sucesso"),
@@ -77,5 +79,37 @@ public class SubmissaoController {
     public ResponseEntity<SubmissaoDto.SubmissaoResponse> getLatestSubmissaoByTcc(@RequestParam UUID tccId) {
         SubmissaoDto.SubmissaoResponse response = submissaoService.getLatestByTcc(tccId);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Cria uma submissão com upload de arquivo", responses = {
+            @ApiResponse(responseCode = "201", description = "Submissão criada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Requisição inválida ou arquivo inválido"),
+            @ApiResponse(responseCode = "404", description = "TCC não encontrado")
+    })
+    @PostMapping("/upload")
+    public ResponseEntity<SubmissaoDto.SubmissaoResponse> createSubmissaoWithFile(
+            @RequestParam("tccId") UUID tccId,
+            @RequestParam("file") MultipartFile file) {
+        
+        if (file.isEmpty()) {
+            throw new RuntimeException("Arquivo não pode estar vazio");
+        }
+
+        // Validar tipo de arquivo (apenas PDF)
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.equals("application/pdf")) {
+            throw new RuntimeException("Apenas arquivos PDF são permitidos");
+        }
+
+        // Fazer upload do arquivo
+        String fileUrl = fileStorageService.storeFile(file, "submissoes");
+
+        // Criar submissão com o arquivo
+        SubmissaoDto.SubmissaoCreateRequest request = new SubmissaoDto.SubmissaoCreateRequest();
+        request.setTccId(tccId);
+        request.setArquivoUrl(fileUrl);
+
+        SubmissaoDto.SubmissaoResponse response = submissaoService.create(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

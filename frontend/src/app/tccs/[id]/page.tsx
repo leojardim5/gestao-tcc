@@ -1,79 +1,57 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { getTcc } from "@/services/tccs";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { getTccById, updateTcc } from "@/services/tccs";
+import { TccForm, TccFormInputs } from "@/components/tccs/TccForm";
+import { useToast } from "@/hooks/useToast";
+import { handleApiError } from "@/services/api";
+import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
-import { SubmissoesTab } from "@/components/tccs/details/SubmissoesTab";
-import { ReunioesTab } from "@/components/tccs/details/ReunioesTab";
-import { ComentariosTab } from "@/components/tccs/details/ComentariosTab";
-import { formatDate } from "@/utils/date";
-import { StatusTcc } from "@/interfaces";
+import { TccUpdateRequest } from "@/interfaces";
 
-interface TccDetailPageProps {
-  params: { id: string };
-}
-
-const statusVariant: { [key in StatusTcc]: "default" | "secondary" | "destructive" } = {
-    [StatusTcc.RASCUNHO]: "secondary",
-    [StatusTcc.EM_ANDAMENTO]: "default",
-    [StatusTcc.AGUARDANDO_DEFESA]: "default",
-    [StatusTcc.CONCLUIDO]: "secondary",
-};
-
-export default function TccDetailPage({ params }: TccDetailPageProps) {
+export default function TccDetailsPage({ params }: { params: { id: string } }) {
   const { id } = params;
+  const { showToast } = useToast();
+  const router = useRouter();
+
   const { data: tcc, isLoading } = useQuery({
-    queryKey: ["tcc", id],
-    queryFn: () => getTcc(id),
+    queryKey: ["tccs", id],
+    queryFn: () => getTccById(id),
+    enabled: !!id,
   });
 
-  if (isLoading) {
-    return <div className="flex justify-center"><Spinner className="h-8 w-8" /></div>;
-  }
+  const { mutate: update, isLoading: isUpdating } = useMutation({
+    mutationFn: (data: TccUpdateRequest) => updateTcc(id, data),
+    onSuccess: () => {
+      showToast("TCC atualizado com sucesso!", "success");
+      router.push("/tccs");
+    },
+    onError: (error) => {
+      const { message } = handleApiError(error);
+      showToast(message, "error");
+    },
+  });
 
-  if (!tcc) {
-    return <p>TCC não encontrado.</p>;
-  }
+  const handleFormSubmit = (data: TccFormInputs) => {
+    const payload = { ...data, dataInicio: new Date(data.dataInicio).toISOString() };
+    update(payload);
+  };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div>
-                <CardTitle className="text-2xl">{tcc.titulo}</CardTitle>
-                <CardDescription>Curso de {tcc.curso}</CardDescription>
-            </div>
-            <Badge variant={statusVariant[tcc.status]}>{tcc.status.replace(/_/g, ' ')}</Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
-            <div><strong>Aluno:</strong> {tcc.aluno.nome}</div>
-            <div><strong>Orientador:</strong> {tcc.orientador.nome}</div>
-            <div><strong>Tema:</strong> {tcc.tema}</div>
-            <div><strong>Data de Início:</strong> {formatDate(tcc.dataInicio)}</div>
-        </CardContent>
-      </Card>
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold">Editar TCC</h1>
 
-      <Tabs defaultValue="submissoes">
-        <TabsList>
-          <TabsTrigger value="submissoes">Submissões</TabsTrigger>
-          <TabsTrigger value="reunioes">Reuniões</TabsTrigger>
-          <TabsTrigger value="comentarios">Comentários</TabsTrigger>
-        </TabsList>
-        <TabsContent value="submissoes">
-          <SubmissoesTab tccId={id} />
-        </TabsContent>
-        <TabsContent value="reunioes">
-          <ReunioesTab tccId={id} />
-        </TabsContent>
-        <TabsContent value="comentarios">
-          <ComentariosTab tccId={id} />
-        </TabsContent>
-      </Tabs>
+      {isLoading ? (
+        <div className="flex justify-center"><Spinner className="h-8 w-8" /></div>
+      ) : tcc ? (
+        <TccForm
+          onSubmit={handleFormSubmit}
+          defaultValues={tcc}
+          isSubmitting={isUpdating}
+        />
+      ) : (
+        <p>TCC não encontrado.</p>
+      )}
     </div>
   );
 }

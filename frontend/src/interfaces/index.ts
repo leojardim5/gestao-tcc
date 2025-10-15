@@ -80,6 +80,11 @@ export interface UsuarioCreateRequest {
   papel: PapelUsuario;
 }
 
+export interface LoginRequest {
+  email: string;
+  senha: string;
+}
+
 export interface Tcc {
     id: string;
     titulo: string;

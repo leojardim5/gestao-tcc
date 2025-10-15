@@ -6,10 +6,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
 public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> {
     Page<Notificacao> findByUsuarioId(UUID usuarioId, Pageable pageable);
     Page<Notificacao> findByUsuarioIdAndLida(UUID usuarioId, boolean lida, Pageable pageable);
+    
+    // Métodos adicionais para notificações
+    List<Notificacao> findByUsuarioIdOrderByCriadaEmDesc(UUID usuarioId);
+    List<Notificacao> findByUsuarioIdAndLidaFalse(UUID usuarioId);
+    long countByLidaFalse();
+    long countByUsuarioIdAndLidaFalse(UUID usuarioId);
 }

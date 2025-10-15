@@ -1,28 +1,13 @@
 spring:
   application:
     name: gestao-tcc
-  profiles:
-    active: dev
-  jackson:
-    date-format: yyyy-MM-dd'T'HH:mm:ss.SSSXXX
-    time-zone: UTC
-
+  flyway:
+    enabled: false
   datasource:
     url: jdbc:postgresql://localhost:5432/gestaotcc_db
     username: postgres
     password: 1234
     driver-class-name: org.postgresql.Driver
 
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-
-  flyway:
-    enabled: false
-
-springdoc:
-  swagger-ui:
-    path: /swagger-ui/index.html
-  api-docs:
-    path: /api-docs
+server:
+  port: 8081

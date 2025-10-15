@@ -22,7 +22,7 @@ Este é o frontend para o sistema de Gestão de TCCs, construído com Next.js, T
 
 - Node.js (v18+)
 - npm ou yarn
-- Backend do Gestão de TCC rodando (disponível em `http://localhost:8080`)
+- Backend do Gestão de TCC rodando (disponível em `http://localhost:8081`)
 
 ### Instalação
 
@@ -41,7 +41,7 @@ Este é o frontend para o sistema de Gestão de TCCs, construído com Next.js, T
 Crie um arquivo `.env.local` na raiz da pasta `frontend` e adicione a URL da sua API backend:
 
 ```
-NEXT_PUBLIC_API_URL=http://localhost:8080/api
+NEXT_PUBLIC_API_URL=http://localhost:8081/api
 ```
 
 ### Rodando em Desenvolvimento

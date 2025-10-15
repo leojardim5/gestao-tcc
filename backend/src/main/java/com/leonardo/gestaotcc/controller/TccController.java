@@ -16,10 +16,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.leonardo.gestaotcc.enums.PapelUsuario;
+import com.leonardo.gestaotcc.security.CustomUserDetails; // Assuming this class exists
 
 @Tag(name = "TCCs", description = "Gerenciamento de Trabalhos de Conclusão de Curso")
 @RestController
-@RequestMapping("/api/tccs")
+@RequestMapping("/tccs")
 @RequiredArgsConstructor
 public class TccController {
 
@@ -94,8 +98,23 @@ public class TccController {
             @ApiResponse(responseCode = "200", description = "Lista de TCCs retornada com sucesso")
     })
     @GetMapping
-    public ResponseEntity<Page<TccDto.TccResponse>> listAllTccs(Pageable pageable) {
-        Page<TccDto.TccResponse> responsePage = tccService.listAll(pageable);
+    public ResponseEntity<Page<TccDto.TccResponse>> listAllTccs(Pageable pageable, Authentication authentication) {
+        UUID authenticatedUserId = null;
+        PapelUsuario authenticatedUserRole = null;
+
+        if (authentication != null && authentication.isAuthenticated()) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                CustomUserDetails userDetails = (CustomUserDetails) principal;
+                authenticatedUserId = userDetails.getId();
+                authenticatedUserRole = userDetails.getPapel();
+            } else {
+                // Handle cases where principal is not CustomUserDetails (e.g., anonymous user, String username)
+                // For now, we'll leave authenticatedUserId and authenticatedUserRole as null
+            }
+        }
+
+        Page<TccDto.TccResponse> responsePage = tccService.listAll(pageable, authenticatedUserId, authenticatedUserRole);
         return ResponseEntity.ok(responsePage);
     }
 }

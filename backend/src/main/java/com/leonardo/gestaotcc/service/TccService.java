@@ -2,6 +2,7 @@ package com.leonardo.gestaotcc.service;
 
 import com.leonardo.gestaotcc.dto.TccDto;
 import com.leonardo.gestaotcc.enums.StatusTcc;
+import com.leonardo.gestaotcc.enums.PapelUsuario;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -15,5 +16,5 @@ public interface TccService {
     TccDto.TccResponse changeStatus(UUID id, StatusTcc newStatus);
     Page<TccDto.TccResponse> listByUsuario(UUID usuarioId, Pageable pageable);
     TccDto.TccResponse get(UUID id);
-    Page<TccDto.TccResponse> listAll(Pageable pageable);
+    Page<TccDto.TccResponse> listAll(Pageable pageable, UUID authenticatedUserId, PapelUsuario authenticatedUserRole);
 }

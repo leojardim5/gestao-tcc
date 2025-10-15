@@ -56,5 +56,6 @@ public class UsuarioDto {
         private PapelUsuario papel;
         private boolean ativo;
         private LocalDateTime criadoEm;
+        private String senha;
     }
 }

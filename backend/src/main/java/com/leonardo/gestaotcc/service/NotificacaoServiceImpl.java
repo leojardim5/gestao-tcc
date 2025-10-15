@@ -2,7 +2,6 @@ package com.leonardo.gestaotcc.service;
 
 import com.leonardo.gestaotcc.dto.NotificacaoDto;
 import com.leonardo.gestaotcc.entity.Notificacao;
-import com.leonardo.gestaotcc.entity.Usuario;
 import com.leonardo.gestaotcc.enums.TipoNotificacao;
 import com.leonardo.gestaotcc.exception.ResourceNotFoundException;
 import com.leonardo.gestaotcc.mapper.NotificacaoMapper;
@@ -27,11 +26,12 @@ public class NotificacaoServiceImpl implements NotificacaoService {
     @Override
     @Transactional
     public void push(UUID usuarioId, TipoNotificacao tipo, String mensagem) {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com ID: " + usuarioId));
+        if (!usuarioRepository.existsById(usuarioId)) {
+            throw new ResourceNotFoundException("Usuário não encontrado com ID: " + usuarioId);
+        }
 
         Notificacao notificacao = Notificacao.builder()
-                .usuario(usuario)
+                .usuarioId(usuarioId)
                 .tipo(tipo)
                 .mensagem(mensagem)
                 .lida(false)
@@ -61,6 +61,6 @@ public class NotificacaoServiceImpl implements NotificacaoService {
         } else {
             notificacoesPage = notificacaoRepository.findByUsuarioId(usuarioId, pageable);
         }
-        return notificacoesPage.map(notificacaoMapper::toResponseDto);
+        return notificacoesPage.map(notificacaoMapper::toResponse);
     }
 }

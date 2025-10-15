@@ -54,7 +54,7 @@ public class TccServiceImpl implements TccService {
         tcc.setStatus(StatusTcc.RASCUNHO);
 
         tcc = tccRepository.save(tcc);
-        return tccMapper.toResponseDto(tcc);
+        return tccMapper.toResponse(tcc);
     }
 
     @Override
@@ -83,7 +83,7 @@ public class TccServiceImpl implements TccService {
 
         tccMapper.updateEntityFromDto(request, tcc);
         tcc = tccRepository.save(tcc);
-        return tccMapper.toResponseDto(tcc);
+        return tccMapper.toResponse(tcc);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class TccServiceImpl implements TccService {
 
         tcc.setOrientador(orientador);
         tcc = tccRepository.save(tcc);
-        return tccMapper.toResponseDto(tcc);
+        return tccMapper.toResponse(tcc);
     }
 
     @Override
@@ -111,7 +111,7 @@ public class TccServiceImpl implements TccService {
                 .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + id));
         tcc.setStatus(newStatus);
         tcc = tccRepository.save(tcc);
-        return tccMapper.toResponseDto(tcc);
+        return tccMapper.toResponse(tcc);
     }
 
     @Override
@@ -121,9 +121,9 @@ public class TccServiceImpl implements TccService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com ID: " + usuarioId));
 
         if (usuario.getPapel() == PapelUsuario.ALUNO) {
-            return tccRepository.findByAlunoId(usuarioId, pageable).map(tccMapper::toResponseDto);
+            return tccRepository.findByAlunoId(usuarioId, pageable).map(tccMapper::toResponse);
         } else if (usuario.getPapel() == PapelUsuario.ORIENTADOR) {
-            return tccRepository.findByOrientadorId(usuarioId, pageable).map(tccMapper::toResponseDto);
+            return tccRepository.findByOrientadorId(usuarioId, pageable).map(tccMapper::toResponse);
         } else {
             return Page.empty(pageable);
         }
@@ -134,12 +134,19 @@ public class TccServiceImpl implements TccService {
     public TccDto.TccResponse get(UUID id) {
         Tcc tcc = tccRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + id));
-        return tccMapper.toResponseDto(tcc);
+        return tccMapper.toResponse(tcc);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<TccDto.TccResponse> listAll(Pageable pageable) {
-        return tccRepository.findAll(pageable).map(tccMapper::toResponseDto);
+    public Page<TccDto.TccResponse> listAll(Pageable pageable, UUID authenticatedUserId, PapelUsuario authenticatedUserRole) {
+        if (authenticatedUserRole == PapelUsuario.ALUNO) {
+            return tccRepository.findByAlunoId(authenticatedUserId, pageable).map(tccMapper::toResponse);
+        } else if (authenticatedUserRole == PapelUsuario.ORIENTADOR) {
+            return tccRepository.findByOrientadorId(authenticatedUserId, pageable).map(tccMapper::toResponse);
+        } else {
+            // COORDENADOR or other roles can see all TCCs
+            return tccRepository.findAll(pageable).map(tccMapper::toResponse);
+        }
     }
 }

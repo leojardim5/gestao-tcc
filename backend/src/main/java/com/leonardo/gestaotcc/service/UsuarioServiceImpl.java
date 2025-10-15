@@ -31,7 +31,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         Usuario usuario = usuarioMapper.toEntity(request);
         usuario.setSenhaHash(request.getSenha()); // Temporário, será substituído por senha encodada
         usuario = usuarioRepository.save(usuario);
-        return usuarioMapper.toResponseDto(usuario);
+        return usuarioMapper.toResponse(usuario);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         usuarioMapper.updateEntityFromDto(request, usuario);
         usuario = usuarioRepository.save(usuario);
-        return usuarioMapper.toResponseDto(usuario);
+        return usuarioMapper.toResponse(usuario);
     }
 
     @Override
@@ -59,12 +59,12 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioDto.UsuarioResponse get(UUID id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com ID: " + id));
-        return usuarioMapper.toResponseDto(usuario);
+        return usuarioMapper.toResponse(usuario);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<UsuarioDto.UsuarioResponse> list(Pageable pageable) {
-        return usuarioRepository.findAll(pageable).map(usuarioMapper::toResponseDto);
+        return usuarioRepository.findAll(pageable).map(usuarioMapper::toResponse);
     }
 }

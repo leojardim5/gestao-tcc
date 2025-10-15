@@ -29,10 +29,17 @@ interface TccFormProps {
   isSubmitting: boolean;
 }
 
+import { useSessionStore } from "@/store/session";
+
 export function TccForm({ onSubmit, defaultValues, isSubmitting }: TccFormProps) {
+  const { user } = useSessionStore();
+
+  const isAluno = user?.papel === PapelUsuario.ALUNO;
+
   const { data: alunosData } = useQuery({
     queryKey: ["usuarios", { papel: PapelUsuario.ALUNO }],
     queryFn: () => listUsuarios({ papel: PapelUsuario.ALUNO }),
+    enabled: !isAluno, // Only fetch if the user is not an Aluno
   });
 
   const { data: orientadoresData } = useQuery({
@@ -44,7 +51,7 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting }: TccFormProps)
     resolver: zodResolver(tccSchema),
     defaultValues: {
       ...defaultValues,
-      alunoId: defaultValues?.aluno?.id,
+      alunoId: isAluno ? user.id : defaultValues?.aluno?.id,
       orientadorId: defaultValues?.orientador?.id,
       dataInicio: defaultValues?.dataInicio?.split('T')[0] // Format for input[type=date]
     },
@@ -74,20 +81,24 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting }: TccFormProps)
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
             <Label htmlFor="alunoId">Aluno</Label>
-            <Controller
-                name="alunoId"
-                control={control}
-                render={({ field }) => (
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!defaultValues}>
-                        <SelectTrigger><SelectValue placeholder="Selecione um aluno" /></SelectTrigger>
-                        <SelectContent>
-                            {alunosData?.content.map((aluno) => (
-                                <SelectItem key={aluno.id} value={aluno.id}>{aluno.nome}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                )}
-            />
+            {isAluno ? (
+              <Input defaultValue={user?.nome} disabled />
+            ) : (
+              <Controller
+                  name="alunoId"
+                  control={control}
+                  render={({ field }) => (
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!defaultValues}>
+                          <SelectTrigger><SelectValue placeholder="Selecione um aluno" /></SelectTrigger>
+                          <SelectContent>
+                              {alunosData?.content.map((aluno) => (
+                                  <SelectItem key={aluno.id} value={aluno.id}>{aluno.nome}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  )}
+              />
+            )}
             {errors.alunoId && <p className="text-sm font-medium text-destructive">{errors.alunoId.message}</p>}
         </div>
         <div className="grid gap-2">
@@ -108,12 +119,6 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting }: TccFormProps)
             />
             {errors.orientadorId && <p className="text-sm font-medium text-destructive">{errors.orientadorId.message}</p>}
         </div>
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="dataInicio">Data de Início</Label>
-        <Input id="dataInicio" type="date" {...register("dataInicio")} />
-        {errors.dataInicio && <p className="text-sm font-medium text-destructive">{errors.dataInicio.message}</p>}
       </div>
 
       <Button type="submit" disabled={isSubmitting} className="w-full">
