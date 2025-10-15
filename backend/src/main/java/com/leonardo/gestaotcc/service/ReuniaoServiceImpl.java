@@ -46,7 +46,7 @@ public class ReuniaoServiceImpl implements ReuniaoService {
         Reuniao reuniao = reuniaoMapper.toEntity(request);
         reuniao.setTcc(tcc);
         reuniao = reuniaoRepository.save(reuniao);
-        return reuniaoMapper.toResponseDto(reuniao);
+        return reuniaoMapper.toResponse(reuniao);
     }
 
     @Override
@@ -65,7 +65,9 @@ public class ReuniaoServiceImpl implements ReuniaoService {
                 .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + tccId));
 
         List<Reuniao> reunioes = reuniaoRepository.findByTccId(tccId);
-        List<ReuniaoDto.ReuniaoResponse> dtoList = reuniaoMapper.toResponseDtoList(reunioes);
+        List<ReuniaoDto.ReuniaoResponse> dtoList = reunioes.stream()
+                .map(reuniaoMapper::toResponse)
+                .toList();
 
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), dtoList.size());
@@ -78,6 +80,6 @@ public class ReuniaoServiceImpl implements ReuniaoService {
     public ReuniaoDto.ReuniaoResponse get(UUID id) {
         Reuniao reuniao = reuniaoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reunião não encontrada com ID: " + id));
-        return reuniaoMapper.toResponseDto(reuniao);
+        return reuniaoMapper.toResponse(reuniao);
     }
 }

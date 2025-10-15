@@ -7,9 +7,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
 
-import java.util.List;
-
-@Mapper(componentModel = "spring", uses = {UsuarioMapper.class})
+@Mapper(componentModel = "spring")
 public interface TccMapper {
 
     TccMapper INSTANCE = Mappers.getMapper(TccMapper.class);
@@ -27,10 +25,11 @@ public interface TccMapper {
     @Mapping(target = "atualizadoEm", ignore = true)
     void updateEntityFromDto(TccDto.TccUpdateRequest dto, @MappingTarget Tcc entity);
 
-    @Mapping(source = "aluno", target = "aluno")
-    @Mapping(source = "orientador", target = "orientador")
-    @Mapping(source = "coorientador", target = "coorientador")
-    TccDto.TccResponse toResponseDto(Tcc tcc);
-
-    List<TccDto.TccResponse> toResponseDtoList(List<Tcc> tccs);
+    @Mapping(source = "aluno.id", target = "alunoId")
+    @Mapping(source = "aluno.nome", target = "alunoNome")
+    @Mapping(source = "orientador.id", target = "orientadorId")
+    @Mapping(source = "orientador.nome", target = "orientadorNome")
+    @Mapping(source = "coorientador.id", target = "coorientadorId")
+    @Mapping(source = "coorientador.nome", target = "coorientadorNome")
+    TccDto.TccResponse toResponse(Tcc tcc);
 }

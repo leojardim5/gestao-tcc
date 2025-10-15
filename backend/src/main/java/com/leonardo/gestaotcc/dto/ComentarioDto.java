@@ -34,7 +34,8 @@ public class ComentarioDto {
     public static class ComentarioResponse {
         private UUID id;
         private UUID submissaoId;
-        private UsuarioDto.UsuarioResponse autor;
+        private UUID autorId;
+        private String autorNome;
         private String texto;
         private LocalDateTime criadoEm;
     }

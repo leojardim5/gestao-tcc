@@ -41,7 +41,7 @@ public class ComentarioServiceImpl implements ComentarioService {
         comentario.setSubmissao(submissao);
         comentario.setAutor(autor);
         comentario = comentarioRepository.save(comentario);
-        return comentarioMapper.toResponseDto(comentario);
+        return comentarioMapper.toResponse(comentario);
     }
 
     @Override
@@ -60,7 +60,9 @@ public class ComentarioServiceImpl implements ComentarioService {
                 .orElseThrow(() -> new ResourceNotFoundException("Submissão não encontrada com ID: " + submissaoId));
 
         List<Comentario> comentarios = comentarioRepository.findBySubmissaoOrderByCriadoEmAsc(submissao);
-        List<ComentarioDto.ComentarioResponse> dtoList = comentarioMapper.toResponseDtoList(comentarios);
+        List<ComentarioDto.ComentarioResponse> dtoList = comentarios.stream()
+                .map(comentarioMapper::toResponse)
+                .toList();
 
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), dtoList.size());

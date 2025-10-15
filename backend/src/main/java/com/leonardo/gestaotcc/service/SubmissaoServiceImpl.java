@@ -43,7 +43,7 @@ public class SubmissaoServiceImpl implements SubmissaoService {
         submissao.setStatus(StatusSubmissao.EM_REVISAO);
 
         submissao = submissaoRepository.save(submissao);
-        return submissaoMapper.toResponseDto(submissao);
+        return submissaoMapper.toResponse(submissao);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class SubmissaoServiceImpl implements SubmissaoService {
 
         submissao.setStatus(status);
         submissao = submissaoRepository.save(submissao);
-        return submissaoMapper.toResponseDto(submissao);
+        return submissaoMapper.toResponse(submissao);
     }
 
     @Override
@@ -68,7 +68,9 @@ public class SubmissaoServiceImpl implements SubmissaoService {
                 .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + tccId));
 
         List<Submissao> submissoes = submissaoRepository.findByTccOrderByVersaoAsc(tcc);
-        List<SubmissaoDto.SubmissaoResponse> dtoList = submissaoMapper.toResponseDtoList(submissoes);
+        List<SubmissaoDto.SubmissaoResponse> dtoList = submissoes.stream()
+                .map(submissaoMapper::toResponse)
+                .toList();
 
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), dtoList.size());
@@ -81,7 +83,7 @@ public class SubmissaoServiceImpl implements SubmissaoService {
     public SubmissaoDto.SubmissaoResponse get(UUID id) {
         Submissao submissao = submissaoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Submissão não encontrada com ID: " + id));
-        return submissaoMapper.toResponseDto(submissao);
+        return submissaoMapper.toResponse(submissao);
     }
 
     @Override
@@ -91,6 +93,6 @@ public class SubmissaoServiceImpl implements SubmissaoService {
                 .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + tccId));
         Submissao submissao = submissaoRepository.findTopByTccOrderByVersaoDesc(tcc)
                 .orElseThrow(() -> new ResourceNotFoundException("Nenhuma submissão encontrada para o TCC com ID: " + tccId));
-        return submissaoMapper.toResponseDto(submissao);
+        return submissaoMapper.toResponse(submissao);
     }
 }

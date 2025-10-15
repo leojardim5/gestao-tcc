@@ -7,8 +7,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
 
-import java.util.List;
-
 @Mapper(componentModel = "spring")
 public interface SubmissaoMapper {
 
@@ -21,7 +19,5 @@ public interface SubmissaoMapper {
     Submissao toEntity(SubmissaoDto.SubmissaoCreateRequest request);
 
     @Mapping(source = "tcc.id", target = "tccId")
-    SubmissaoDto.SubmissaoResponse toResponseDto(Submissao submissao);
-
-    List<SubmissaoDto.SubmissaoResponse> toResponseDtoList(List<Submissao> submissoes);
+    SubmissaoDto.SubmissaoResponse toResponse(Submissao submissao);
 }

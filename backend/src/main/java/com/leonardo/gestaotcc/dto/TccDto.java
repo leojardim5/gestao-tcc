@@ -61,9 +61,12 @@ public class TccDto {
         private StatusTcc status;
         private LocalDate dataInicio;
         private LocalDate dataEntregaPrevista;
-        private UsuarioDto.UsuarioResponse aluno;
-        private UsuarioDto.UsuarioResponse orientador;
-        private UsuarioDto.UsuarioResponse coorientador;
+        private UUID alunoId;
+        private String alunoNome;
+        private UUID orientadorId;
+        private String orientadorNome;
+        private UUID coorientadorId;
+        private String coorientadorNome;
         private LocalDateTime criadoEm;
         private LocalDateTime atualizadoEm;
     }

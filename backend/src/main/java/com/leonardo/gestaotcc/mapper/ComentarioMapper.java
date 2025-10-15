@@ -9,7 +9,7 @@ import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {UsuarioMapper.class})
+@Mapper(componentModel = "spring")
 public interface ComentarioMapper {
 
     ComentarioMapper INSTANCE = Mappers.getMapper(ComentarioMapper.class);
@@ -22,8 +22,7 @@ public interface ComentarioMapper {
     Comentario toEntity(ComentarioDto.ComentarioCreateRequest request);
 
     @Mapping(source = "submissao.id", target = "submissaoId")
-    @Mapping(source = "autor", target = "autor")
-    ComentarioDto.ComentarioResponse toResponseDto(Comentario comentario);
-
-    List<ComentarioDto.ComentarioResponse> toResponseDtoList(List<Comentario> comentarios);
+    @Mapping(source = "autor.id", target = "autorId")
+    @Mapping(source = "autor.nome", target = "autorNome")
+    ComentarioDto.ComentarioResponse toResponse(Comentario comentario);
 }
