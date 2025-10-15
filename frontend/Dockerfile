@@ -1,27 +1,36 @@
-# Install dependencies
-FROM node:18-alpine AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install
+# Multi-stage build para otimizar o tamanho da imagem
+FROM node:18-alpine AS build
 
-# Build the app
-FROM node:18-alpine AS builder
+# Definir diretório de trabalho
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+
+# Copiar arquivos de dependências
+COPY package*.json ./
+
+# Instalar dependências
+RUN npm ci --only=production
+
+# Copiar código fonte
 COPY . .
+
+# Build da aplicação
 RUN npm run build
 
-# Run the app
-FROM node:18-alpine AS runner
-WORKDIR /app
+# Imagem de produção com Nginx
+FROM nginx:alpine
 
-ENV NODE_ENV=production
+# Copiar configuração customizada do Nginx
+COPY nginx.conf /etc/nginx/nginx.conf
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+# Copiar arquivos buildados
+COPY --from=build /app/out /usr/share/nginx/html
 
-EXPOSE 3000
+# Expor porta
+EXPOSE 80
 
-CMD ["npm", "start"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+
+# Comando para executar o Nginx
+CMD ["nginx", "-g", "daemon off;"]
