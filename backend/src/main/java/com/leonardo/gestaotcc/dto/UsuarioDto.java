@@ -33,6 +33,9 @@ public class UsuarioDto {
 
         @NotNull(message = "Papel é obrigatório")
         private PapelUsuario papel;
+        
+        @Builder.Default
+        private boolean disponivelParaOrientacao = false;
     }
 
     @Data
@@ -43,6 +46,7 @@ public class UsuarioDto {
         private String nome;
         private Boolean ativo;
         private PapelUsuario papel;
+        private Boolean disponivelParaOrientacao;
     }
 
     @Data
@@ -55,6 +59,7 @@ public class UsuarioDto {
         private String email;
         private PapelUsuario papel;
         private boolean ativo;
+        private boolean disponivelParaOrientacao;
         private LocalDateTime criadoEm;
         private String senha;
     }

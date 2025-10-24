@@ -18,6 +18,10 @@ public interface UsuarioMapper {
     @Mapping(target = "criadoEm", ignore = true)
     @Mapping(target = "atualizadoEm", ignore = true)
     @Mapping(target = "senhaHash", ignore = true)
+    @Mapping(target = "nome", ignore = true)
+    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "papel", ignore = true)
+    @Mapping(target = "ativo", ignore = true)
     void updateEntityFromDto(UsuarioDto.UsuarioUpdateRequest dto, @MappingTarget Usuario entity);
 
     @Mapping(source = "senhaHash", target = "senha")

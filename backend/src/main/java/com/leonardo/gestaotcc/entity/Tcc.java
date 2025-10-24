@@ -30,6 +30,12 @@ public class Tcc {
     @Column(nullable = false)
     private String titulo;
 
+    @Column(nullable = false)
+    private String tema;
+
+    @Column(nullable = false)
+    private String curso;
+
     @Lob
     private String resumo;
 

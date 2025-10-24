@@ -43,6 +43,10 @@ public class Usuario {
     @Builder.Default
     private boolean ativo = true;
 
+    @Builder.Default
+    @Column(name = "disponivel_para_orientacao")
+    private boolean disponivelParaOrientacao = false;
+
     @CreationTimestamp
     @Column(name = "criado_em", updatable = false)
     private LocalDateTime criadoEm;

@@ -1,6 +1,7 @@
 {
-  "/tccs/new/page": "app/tccs/new/page.js",
   "/login/page": "app/login/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/tccs/page": "app/tccs/page.js"
+  "/tccs/new/page": "app/tccs/new/page.js",
+  "/tccs/page": "app/tccs/page.js",
+  "/notificacoes/page": "app/notificacoes/page.js"
 }

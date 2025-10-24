@@ -64,12 +64,19 @@ export interface Page<T> {
 
 // DTOs aligned with Backend
 
+export enum StatusConvite {
+  PENDENTE = "PENDENTE",
+  ACEITO = "ACEITO",
+  REJEITADO = "REJEITADO",
+}
+
 export interface Usuario {
   id: string;
   nome: string;
   email: string;
   papel: PapelUsuario;
   ativo: boolean;
+  disponivelParaOrientacao?: boolean;
   criadoEm: string; // ISO Date string
 }
 
@@ -105,6 +112,7 @@ export interface TccCreateRequest {
     tema: string;
     curso: string;
     dataInicio: string; // ISO Date string
+    mensagemOrientador?: string; // Mensagem para o orientador (apenas para alunos)
 }
 
 export interface TccUpdateRequest {
@@ -183,4 +191,29 @@ export interface Notificacao {
     lida: boolean;
     tipo: TipoNotificacao;
     criadoEm: string; // ISO Date string
+}
+
+export interface ConviteOrientacao {
+    id: string;
+    alunoId: string;
+    alunoNome: string;
+    alunoEmail: string;
+    orientadorId: string;
+    orientadorNome: string;
+    tccId: string;
+    tccTitulo: string;
+    mensagem: string;
+    status: StatusConvite;
+    dataEnvio: string; // ISO Date string
+    dataResposta?: string; // ISO Date string
+}
+
+export interface EnviarConviteRequest {
+    orientadorId: string;
+    tccId: string;
+    mensagem: string;
+}
+
+export interface ResponderConviteRequest {
+    status: StatusConvite;
 }

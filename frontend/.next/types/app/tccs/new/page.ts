@@ -1,4 +1,4 @@
-// File: C:\Users\leoja\OneDrive\Área de Trabalho\Documentos\Projeto_TCC\gestao-tcc\frontend\src\app\tccs\new\page.tsx
+// File: C:\Users\leoja\OneDrive\Área de Trabalho\JS\Documentos\Projeto_TCC\gestao-tcc\frontend\src\app\tccs\new\page.tsx
 import * as entry from '../../../../../src/app/tccs/new/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
