@@ -9,8 +9,6 @@ import com.leonardo.gestaotcc.repository.UsuarioRepository;
 import com.leonardo.gestaotcc.security.CustomUserDetails;
 import com.leonardo.gestaotcc.security.JwtService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +19,6 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
 
     public LoginResponseDto register(RegisterRequestDto request) {
         if (usuarioRepository.existsByEmail(request.getEmail())) {
@@ -56,15 +53,13 @@ public class AuthService {
     }
 
     public LoginResponseDto login(LoginRequestDto request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getSenha()
-                )
-        );
-
         Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        // Verificar senha manualmente
+        if (!passwordEncoder.matches(request.getSenha(), usuario.getSenhaHash())) {
+            throw new RuntimeException("Senha incorreta");
+        }
 
         CustomUserDetails userDetails = new CustomUserDetails(
                 usuario.getId(),

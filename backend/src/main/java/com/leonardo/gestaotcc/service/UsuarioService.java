@@ -12,4 +12,5 @@ public interface UsuarioService {
     void deactivate(UUID id);
     UsuarioDto.UsuarioResponse get(UUID id);
     Page<UsuarioDto.UsuarioResponse> list(Pageable pageable);
+    Page<UsuarioDto.UsuarioResponse> listOrientadoresDisponiveis(Pageable pageable);
 }

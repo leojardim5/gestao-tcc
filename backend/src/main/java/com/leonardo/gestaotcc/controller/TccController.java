@@ -23,7 +23,7 @@ import com.leonardo.gestaotcc.security.CustomUserDetails; // Assuming this class
 
 @Tag(name = "TCCs", description = "Gerenciamento de Trabalhos de Conclusão de Curso")
 @RestController
-@RequestMapping("/tccs")
+@RequestMapping("/api/tccs")
 @RequiredArgsConstructor
 public class TccController {
 

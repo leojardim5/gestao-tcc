@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/store/session";
 import { isCoordenador, isOrientador } from "@/utils/guards";
-import { Book, Home, Users, Bell, FileText, Calendar } from "lucide-react";
+import { Book, Home, Users, Bell, FileText, Calendar, Settings } from "lucide-react";
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: Home, allowed: () => true },
@@ -13,6 +13,7 @@ const navLinks = [
   { href: "/submissoes", label: "Submissões", icon: FileText, allowed: (papel) => isOrientador(papel) || isCoordenador(papel) },
   { href: "/reunioes", label: "Reuniões", icon: Calendar, allowed: () => true },
   { href: "/notificacoes", label: "Notificações", icon: Bell, allowed: () => true },
+  { href: "/orientador", label: "Painel Orientador", icon: Settings, allowed: (papel) => isOrientador(papel) },
   { href: "/usuarios", label: "Usuários", icon: Users, allowed: (papel) => isCoordenador(papel) },
 ];
 

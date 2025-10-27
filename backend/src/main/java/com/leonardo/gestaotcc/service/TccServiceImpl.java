@@ -48,10 +48,16 @@ public class TccServiceImpl implements TccService {
             throw new BusinessException("O usuário com ID " + request.getOrientadorId() + " não é um orientador ou coordenador.");
         }
 
-        Tcc tcc = tccMapper.toEntity(request);
-        tcc.setAluno(aluno);
-        tcc.setOrientador(orientador);
-        tcc.setStatus(StatusTcc.RASCUNHO);
+        Tcc tcc = Tcc.builder()
+                .titulo(request.getTitulo())
+                .tema(request.getTema())
+                .curso(request.getCurso())
+                .dataInicio(request.getDataInicio())
+                .dataEntregaPrevista(request.getDataEntregaPrevista())
+                .aluno(aluno)
+                .orientador(orientador)
+                .status(StatusTcc.RASCUNHO)
+                .build();
 
         tcc = tccRepository.save(tcc);
         return tccMapper.toResponse(tcc);

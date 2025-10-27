@@ -15,6 +15,10 @@ public interface TccMapper {
     @Mapping(target = "aluno", ignore = true)
     @Mapping(target = "orientador", ignore = true)
     @Mapping(target = "coorientador", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "criadoEm", ignore = true)
+    @Mapping(target = "atualizadoEm", ignore = true)
+    @Mapping(target = "resumo", ignore = true)
     Tcc toEntity(TccDto.TccCreateRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -31,5 +35,6 @@ public interface TccMapper {
     @Mapping(source = "orientador.nome", target = "orientadorNome")
     @Mapping(source = "coorientador.id", target = "coorientadorId")
     @Mapping(source = "coorientador.nome", target = "coorientadorNome")
+    @Mapping(source = "dataInicio", target = "dataInicio")
     TccDto.TccResponse toResponse(Tcc tcc);
 }

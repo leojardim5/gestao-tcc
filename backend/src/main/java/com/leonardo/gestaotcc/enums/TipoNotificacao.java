@@ -4,5 +4,6 @@ public enum TipoNotificacao {
     PRAZO,
     REUNIAO,
     COMENTARIO,
-    SISTEMA
+    SISTEMA,
+    CONVITE_ORIENTACAO
 }

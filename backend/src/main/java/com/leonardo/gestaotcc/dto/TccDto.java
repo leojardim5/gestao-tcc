@@ -28,8 +28,11 @@ public class TccDto {
         @NotBlank(message = "Título é obrigatório")
         private String titulo;
 
-        @NotBlank(message = "Resumo é obrigatório")
-        private String resumo;
+        @NotBlank(message = "Tema é obrigatório")
+        private String tema;
+
+        @NotBlank(message = "Curso é obrigatório")
+        private String curso;
 
         @NotNull(message = "Data de início é obrigatória")
         private LocalDate dataInicio;
@@ -43,7 +46,8 @@ public class TccDto {
     @AllArgsConstructor
     public static class TccUpdateRequest {
         private String titulo;
-        private String resumo;
+        private String tema;
+        private String curso;
         private StatusTcc status;
         private UUID orientadorId;
         private UUID coorientadorId;
@@ -57,7 +61,8 @@ public class TccDto {
     public static class TccResponse {
         private UUID id;
         private String titulo;
-        private String resumo;
+        private String tema;
+        private String curso;
         private StatusTcc status;
         private LocalDate dataInicio;
         private LocalDate dataEntregaPrevista;

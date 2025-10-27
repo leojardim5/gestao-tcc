@@ -73,4 +73,13 @@ public class UsuarioController {
         Page<UsuarioDto.UsuarioResponse> responsePage = usuarioService.list(pageable);
         return ResponseEntity.ok(responsePage);
     }
+
+    @Operation(summary = "Lista orientadores disponíveis para orientação", responses = {
+            @ApiResponse(responseCode = "200", description = "Lista de orientadores disponíveis retornada com sucesso")
+    })
+    @GetMapping("/orientadores-disponiveis")
+    public ResponseEntity<Page<UsuarioDto.UsuarioResponse>> listOrientadoresDisponiveis(Pageable pageable) {
+        Page<UsuarioDto.UsuarioResponse> responsePage = usuarioService.listOrientadoresDisponiveis(pageable);
+        return ResponseEntity.ok(responsePage);
+    }
 }

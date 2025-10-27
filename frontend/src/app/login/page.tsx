@@ -14,12 +14,14 @@ import {
   FormMessage,
 } from "@/components/ui/Form";
 import { Input } from "@/components/ui/Input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { useMutation } from "@tanstack/react-query";
 import { login, signup } from "@/services/usuarios";
 import { useToast } from "@/hooks/useToast";
 import { handleApiError } from "@/services/api";
 import { useRouter } from "next/navigation";
 import { useSessionStore } from "@/store/session";
+import { PapelUsuario } from "@/interfaces";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -31,6 +33,7 @@ const signupSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
   senha: z.string().min(6, { message: "A senha deve ter no mínimo 6 caracteres" }),
   confirmarSenha: z.string(),
+  papel: z.nativeEnum(PapelUsuario, { message: "Papel é obrigatório" }),
 }).refine((data) => data.senha === data.confirmarSenha, {
   message: "As senhas não coincidem",
   path: ["confirmarSenha"],
@@ -60,6 +63,7 @@ export default function LoginPage() {
       email: "",
       senha: "",
       confirmarSenha: "",
+      papel: PapelUsuario.ALUNO,
     },
   });
 
@@ -72,7 +76,14 @@ export default function LoginPage() {
     onSuccess: (data) => { // Modified onSuccess to handle AuthResponse
       console.log("AuthResponse data received:", data);
       showToast("Login realizado com sucesso!", "success");
-      setSession(data.token, { id: data.id, nome: data.nome, email: data.email, papel: data.papel });
+      setSession(data.token, {
+        id: data.usuario.id, 
+        nome: data.usuario.nome, 
+        email: data.usuario.email, 
+        papel: data.usuario.papel,
+        ativo: data.usuario.ativo,
+        disponivelParaOrientacao: data.usuario.disponivelParaOrientacao || false
+      });
       router.push("/dashboard");
     },
     onError: (error) => {
@@ -213,6 +224,22 @@ export default function LoginPage() {
                 {signupForm.formState.errors.confirmarSenha && (
                   <p className="text-sm font-medium text-destructive">
                     {signupForm.formState.errors.confirmarSenha.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label htmlFor="signup-papel">Papel</label>
+                <select
+                  id="signup-papel"
+                  {...signupForm.register("papel")}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value={PapelUsuario.ALUNO}>Aluno</option>
+                  <option value={PapelUsuario.ORIENTADOR}>Orientador</option>
+                </select>
+                {signupForm.formState.errors.papel && (
+                  <p className="text-sm font-medium text-destructive">
+                    {signupForm.formState.errors.papel.message}
                   </p>
                 )}
               </div>

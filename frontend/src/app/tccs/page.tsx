@@ -11,12 +11,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/useToast";
 import { handleApiError } from "@/services/api";
+import { useSessionStore } from "@/store/session";
+import { PapelUsuario } from "@/interfaces";
 
 export default function TccsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { searchParams, setQueryParams } = useQueryParams();
+  const { user } = useSessionStore();
   const page = Number(searchParams.get("page") ?? 1) - 1;
 
   const { data, isLoading } = useQuery({
@@ -40,9 +43,11 @@ export default function TccsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">TCCs</h1>
-        <Link href="/tccs/new">
-          <Button>Novo TCC</Button>
-        </Link>
+        {user?.papel === PapelUsuario.ALUNO && (
+          <Link href="/tccs/new">
+            <Button>Novo TCC</Button>
+          </Link>
+        )}
       </div>
 
       {isLoading ? (

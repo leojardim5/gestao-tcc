@@ -67,4 +67,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     public Page<UsuarioDto.UsuarioResponse> list(Pageable pageable) {
         return usuarioRepository.findAll(pageable).map(usuarioMapper::toResponse);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UsuarioDto.UsuarioResponse> listOrientadoresDisponiveis(Pageable pageable) {
+        return usuarioRepository.findByPapelAndDisponivelParaOrientacaoTrue(
+            com.leonardo.gestaotcc.enums.PapelUsuario.ORIENTADOR, 
+            pageable
+        ).map(usuarioMapper::toResponse);
+    }
 }

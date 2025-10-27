@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { useQuery } from "@tanstack/react-query";
-import { listUsuarios } from "@/services/usuarios";
+import { listUsuarios, listOrientadoresDisponiveis } from "@/services/usuarios";
 import { PapelUsuario } from "@/interfaces";
+import { Spinner } from "@/components/ui/Spinner";
 
 const tccSchema = z.object({
   titulo: z.string().min(1, "Título é obrigatório"),
@@ -19,6 +20,7 @@ const tccSchema = z.object({
   alunoId: z.string().min(1, "Aluno é obrigatório"),
   orientadorId: z.string().min(1, "Orientador é obrigatório"),
   dataInicio: z.string().min(1, "Data de início é obrigatória"),
+  mensagemOrientador: z.string().min(10, "Mensagem deve ter pelo menos 10 caracteres"),
 });
 
 export type TccFormInputs = z.infer<typeof tccSchema>;
@@ -43,8 +45,8 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting }: TccFormProps)
   });
 
   const { data: orientadoresData } = useQuery({
-    queryKey: ["usuarios", { papel: PapelUsuario.ORIENTADOR }],
-    queryFn: () => listUsuarios({ papel: PapelUsuario.ORIENTADOR }),
+    queryKey: ["orientadores-disponiveis"],
+    queryFn: () => listOrientadoresDisponiveis(),
   });
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<TccFormInputs>({
@@ -121,9 +123,20 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting }: TccFormProps)
         </div>
       </div>
 
+      <div className="grid gap-2">
+        <Label htmlFor="mensagemOrientador">Mensagem para o Orientador</Label>
+        <textarea
+          id="mensagemOrientador"
+          {...register("mensagemOrientador")}
+          className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          placeholder="Escreva uma mensagem para o orientador explicando sobre seu projeto e por que gostaria que ele fosse seu orientador..."
+        />
+        {errors.mensagemOrientador && <p className="text-sm font-medium text-destructive">{errors.mensagemOrientador.message}</p>}
+      </div>
+
       <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? <Spinner className="mr-2 h-4 w-4 animate-spin" /> : null}
-        Salvar
+        {user?.papel === "ALUNO" ? "Enviar Solicitação" : "Salvar"}
       </Button>
     </form>
   );
