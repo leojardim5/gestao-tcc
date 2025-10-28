@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import { Tcc, TccCreateRequest, TccUpdateRequest, Usuario } from "@/interfaces";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -13,27 +14,30 @@ import { listUsuarios, listOrientadoresDisponiveis } from "@/services/usuarios";
 import { PapelUsuario } from "@/interfaces";
 import { Spinner } from "@/components/ui/Spinner";
 
-const tccSchema = z.object({
+const createTccSchema = (isAluno: boolean) => z.object({
   titulo: z.string().min(1, "Título é obrigatório"),
   tema: z.string().min(1, "Tema é obrigatório"),
   curso: z.string().min(1, "Curso é obrigatório"),
   alunoId: z.string().min(1, "Aluno é obrigatório"),
-  orientadorId: z.string().min(1, "Orientador é obrigatório"),
+  orientadorId: z.string().min(1, "Orientador é obrigatório"), // Sempre obrigatório
   dataInicio: z.string().min(1, "Data de início é obrigatória"),
-  mensagemOrientador: z.string().min(10, "Mensagem deve ter pelo menos 10 caracteres"),
+  mensagemOrientador: isAluno 
+    ? z.string().min(10, "Mensagem deve ter pelo menos 10 caracteres")
+    : z.string().optional(),
 });
 
-export type TccFormInputs = z.infer<typeof tccSchema>;
+export type TccFormInputs = z.infer<ReturnType<typeof createTccSchema>>;
 
 interface TccFormProps {
   onSubmit: (data: TccFormInputs) => void;
   defaultValues?: Partial<Tcc>;
   isSubmitting: boolean;
+  onReset?: () => void;
 }
 
 import { useSessionStore } from "@/store/session";
 
-export function TccForm({ onSubmit, defaultValues, isSubmitting }: TccFormProps) {
+export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccFormProps) {
   const { user } = useSessionStore();
 
   const isAluno = user?.papel === PapelUsuario.ALUNO;
@@ -44,23 +48,44 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting }: TccFormProps)
     enabled: !isAluno, // Only fetch if the user is not an Aluno
   });
 
-  const { data: orientadoresData } = useQuery({
-    queryKey: ["orientadores-disponiveis"],
+  // BUSCAR ORIENTADORES REAIS DO BACKEND
+  const { data: orientadoresData, isLoading: isLoadingOrientadores, error: orientadoresError } = useQuery({
+    queryKey: ['orientadores-disponiveis'],
     queryFn: () => listOrientadoresDisponiveis(),
+    enabled: isAluno, // Só buscar se for aluno
+    retry: 1, // Tentar apenas 1 vez
   });
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm<TccFormInputs>({
-    resolver: zodResolver(tccSchema),
+  const { register, handleSubmit, control, reset, formState: { errors }, getValues } = useForm<TccFormInputs>({
+    resolver: zodResolver(createTccSchema(isAluno)),
     defaultValues: {
       ...defaultValues,
       alunoId: isAluno ? user.id : defaultValues?.aluno?.id,
       orientadorId: defaultValues?.orientador?.id,
-      dataInicio: defaultValues?.dataInicio?.split('T')[0] // Format for input[type=date]
+      dataInicio: defaultValues?.dataInicio?.split('T')[0] || new Date().toISOString().split('T')[0] // Data atual como padrão
     },
   });
 
+  // Reset form when onReset is called
+  useEffect(() => {
+    if (onReset) {
+      reset({
+        alunoId: isAluno ? user.id : undefined,
+        orientadorId: undefined,
+        dataInicio: new Date().toISOString().split('T')[0], // Data atual
+        titulo: "",
+        tema: "",
+        curso: "",
+        mensagemOrientador: ""
+      });
+    }
+  }, [onReset, reset, isAluno, user?.id]);
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+    <form onSubmit={handleSubmit((data) => {
+      console.log("📝 FORMULÁRIO SUBMETIDO VIA handleSubmit!", data);
+      onSubmit(data);
+    })} className="grid gap-4">
       <div className="grid gap-2">
         <Label htmlFor="titulo">Título</Label>
         <Input id="titulo" {...register("titulo")} />
@@ -80,11 +105,26 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting }: TccFormProps)
         </div>
       </div>
 
+      <div className="grid gap-2">
+        <Label htmlFor="dataInicio">Data de Início</Label>
+        <Input 
+          id="dataInicio" 
+          type="date" 
+          {...register("dataInicio")} 
+          readOnly
+          className="bg-gray-50"
+        />
+        {errors.dataInicio && <p className="text-sm font-medium text-destructive">{errors.dataInicio.message}</p>}
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
             <Label htmlFor="alunoId">Aluno</Label>
             {isAluno ? (
-              <Input defaultValue={user?.nome} disabled />
+              <div>
+                <Input defaultValue={user?.nome} disabled />
+                <input type="hidden" {...register("alunoId")} value={user?.id} />
+              </div>
             ) : (
               <Controller
                   name="alunoId"
@@ -110,10 +150,24 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting }: TccFormProps)
                 control={control}
                 render={({ field }) => (
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectTrigger><SelectValue placeholder="Selecione um orientador" /></SelectTrigger>
+                        <SelectTrigger>
+                            <SelectValue placeholder={
+                                isLoadingOrientadores 
+                                    ? "Carregando orientadores..." 
+                                    : "Selecione um orientador"
+                            } />
+                        </SelectTrigger>
                         <SelectContent>
-                            {orientadoresData?.content.map((orientador) => (
-                                <SelectItem key={orientador.id} value={orientador.id}>{orientador.nome}</SelectItem>
+                            {isLoadingOrientadores ? (
+                                <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                            ) : orientadoresError ? (
+                                <SelectItem value="error" disabled>Erro ao carregar orientadores</SelectItem>
+                            ) : orientadoresData?.content?.length === 0 ? (
+                                <SelectItem value="empty" disabled>Nenhum orientador disponível</SelectItem>
+                            ) : orientadoresData?.content?.map((orientador) => (
+                                <SelectItem key={orientador.id} value={orientador.id}>
+                                    {orientador.nome}
+                                </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -134,7 +188,16 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting }: TccFormProps)
         {errors.mensagemOrientador && <p className="text-sm font-medium text-destructive">{errors.mensagemOrientador.message}</p>}
       </div>
 
-      <Button type="submit" disabled={isSubmitting} className="w-full">
+      <Button 
+        type="submit" 
+        disabled={isSubmitting} 
+        className="w-full"
+        onClick={(e) => {
+          console.log("🔥 BOTÃO CLICADO!");
+          console.log("📋 Dados do formulário:", getValues());
+          console.log("❌ Erros de validação:", errors);
+        }}
+      >
         {isSubmitting ? <Spinner className="mr-2 h-4 w-4 animate-spin" /> : null}
         {user?.papel === "ALUNO" ? "Enviar Solicitação" : "Salvar"}
       </Button>

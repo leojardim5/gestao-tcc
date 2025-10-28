@@ -9,10 +9,28 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Try to get token from Zustand store first
+    const sessionData = localStorage.getItem("session-storage");
+    if (sessionData) {
+      try {
+        const parsed = JSON.parse(sessionData);
+        const token = parsed?.state?.token;
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.warn("Failed to parse session storage:", error);
+      }
     }
+    
+    // Fallback to old authToken key for backward compatibility
+    if (!config.headers.Authorization) {
+      const token = localStorage.getItem("authToken");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    
     return config;
   },
   (error) => {

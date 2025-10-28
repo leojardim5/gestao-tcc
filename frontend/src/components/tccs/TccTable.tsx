@@ -15,9 +15,10 @@ interface TccTableProps {
   onDelete: (id: string) => void;
 }
 
-const statusVariant: { [key in StatusTcc]: "default" | "secondary" | "destructive" } = {
+const statusVariant: { [key in StatusTcc]: "default" | "secondary" | "destructive" | "warning" | "success" } = {
     [StatusTcc.RASCUNHO]: "secondary",
-    [StatusTcc.EM_ANDAMENTO]: "default",
+    [StatusTcc.PENDENTE_APROVACAO]: "warning", // Amarelo para pendente
+    [StatusTcc.EM_ANDAMENTO]: "success", // Verde para aceito/em andamento
     [StatusTcc.AGUARDANDO_DEFESA]: "default",
     [StatusTcc.CONCLUIDO]: "secondary",
 };
@@ -43,10 +44,14 @@ export function TccTable({ tccs, onEdit, onDelete }: TccTableProps) {
                     {tcc.titulo}
                 </Link>
             </TableCell>
-            <TableCell>{tcc.aluno.nome}</TableCell>
-            <TableCell>{tcc.orientador.nome}</TableCell>
+            <TableCell>{tcc.alunoNome || 'N/A'}</TableCell>
+            <TableCell>{tcc.orientadorNome || 'N/A'}</TableCell>
             <TableCell>
-              <Badge variant={statusVariant[tcc.status]}>{tcc.status.replace(/_/g, ' ')}</Badge>
+              <Badge variant={statusVariant[tcc.status]}>
+                {tcc.status === StatusTcc.PENDENTE_APROVACAO ? 'Pendente' : 
+                 tcc.status === StatusTcc.EM_ANDAMENTO ? 'Aceito' :
+                 tcc.status.replace(/_/g, ' ')}
+              </Badge>
             </TableCell>
             <TableCell>{formatDate(tcc.dataInicio)}</TableCell>
             <TableCell>

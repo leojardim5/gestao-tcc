@@ -7,11 +7,11 @@ interface ListNotificacoesParams {
 }
 
 export const listNotificacoes = async (params: ListNotificacoesParams): Promise<Notificacao[]> => {
-  const response = await api.get('/notificacoes', { params });
+  const response = await api.get('/api/notificacoes', { params });
   return response.data;
 };
 
 export const markNotificacaoAsRead = async (id: string): Promise<Notificacao> => {
-  const response = await api.patch(`/notificacoes/${id}/lida`);
+  const response = await api.patch(`/api/notificacoes/${id}/lida`);
   return response.data;
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { createTcc } from "@/services/tccs";
 import { enviarConvite } from "@/services/convites";
 import { TccForm, TccFormInputs } from "@/components/tccs/TccForm";
@@ -11,57 +12,100 @@ import { TccCreateRequest, EnviarConviteRequest } from "@/interfaces";
 import { useSessionStore } from "@/store/session";
 
 export default function NewTccPage() {
+  console.log("🎯 COMPONENTE NewTccPage CARREGADO!");
+  
   const { showToast } = useToast();
   const router = useRouter();
   const { user } = useSessionStore();
+  const [resetForm, setResetForm] = useState(false);
 
   const { mutate: create, isLoading: isCreating } = useMutation({
-    mutationFn: (data: TccCreateRequest) => createTcc(data),
+    mutationFn: (data: TccCreateRequest) => {
+      console.log("🌐 FAZENDO REQUISIÇÃO PARA CRIAR TCC:", data);
+      return createTcc(data);
+    },
     onSuccess: (tcc, variables) => {
-      if (user?.papel === "ALUNO" && variables.mensagemOrientador) {
+      console.log("✅ TCC CRIADO COM SUCESSO!", tcc);
+      console.log("👤 Papel do usuário:", user?.papel);
+      
+      if (user?.papel === "ALUNO") {
+        console.log("🎓 Usuário é ALUNO, verificando dados do formulário...");
         // Para alunos, enviar convite após criar TCC
-        const convitePayload: EnviarConviteRequest = {
-          orientadorId: variables.orientadorId,
-          tccId: tcc.id,
-          mensagem: variables.mensagemOrientador
-        };
+        const formData = JSON.parse(sessionStorage.getItem('tccFormData') || '{}');
+        console.log("📋 Dados do formulário:", formData);
         
-        enviarConviteMutation({ 
-          alunoId: user.id, 
-          data: convitePayload 
-        });
+        if (formData.orientadorId && formData.mensagemOrientador) {
+          const convitePayload: EnviarConviteRequest = {
+            orientadorId: formData.orientadorId,
+            tccId: tcc.id,
+            mensagem: formData.mensagemOrientador
+          };
+          
+          console.log("📨 Enviando convite:", convitePayload);
+          
+          enviarConviteMutation({ 
+            alunoId: user.id, 
+            data: convitePayload 
+          });
+        } else {
+          console.log("❌ Dados do formulário incompletos, não enviando convite");
+          showToast("TCC criado com sucesso!", "success");
+          sessionStorage.removeItem('tccFormData');
+          setResetForm(true);
+          setTimeout(() => setResetForm(false), 100);
+        }
       } else {
+        console.log("👨‍🏫 Usuário não é aluno, redirecionando...");
         showToast("TCC criado com sucesso!", "success");
         router.push("/tccs");
       }
     },
     onError: (error) => {
+      console.error("❌ ERRO AO CRIAR TCC:", error);
       const { message } = handleApiError(error);
       showToast(message, "error");
     },
   });
 
   const { mutate: enviarConviteMutation, isLoading: isEnviandoConvite } = useMutation({
-    mutationFn: ({ alunoId, data }: { alunoId: string; data: EnviarConviteRequest }) => 
-      enviarConvite(alunoId, data),
-    onSuccess: () => {
+    mutationFn: ({ alunoId, data }: { alunoId: string; data: EnviarConviteRequest }) => {
+      console.log("🌐 FAZENDO REQUISIÇÃO PARA ENVIAR CONVITE:", { alunoId, data });
+      return enviarConvite(alunoId, data);
+    },
+    onSuccess: (result) => {
+      console.log("✅ CONVITE ENVIADO COM SUCESSO!", result);
       showToast("Solicitação enviada com sucesso! O orientador receberá uma notificação.", "success");
-      router.push("/tccs");
+      sessionStorage.removeItem('tccFormData'); // Limpar dados temporários
+      // Resetar formulário para permitir nova solicitação
+      setResetForm(true);
+      setTimeout(() => setResetForm(false), 100); // Reset flag after form is reset
     },
     onError: (error) => {
+      console.error("❌ ERRO AO ENVIAR CONVITE:", error);
       const { message } = handleApiError(error);
       showToast(message, "error");
     },
   });
 
   const handleFormSubmit = (data: TccFormInputs) => {
-    // Para alunos, incluir dados do convite no TCC
+    console.log("🚀 FORMULÁRIO SUBMETIDO!", data);
+    console.log("👤 Usuário:", user);
+    
+    // Para alunos, salvar dados do formulário para usar depois
+    if (user?.papel === "ALUNO") {
+      console.log("📝 Salvando dados do formulário no sessionStorage");
+      sessionStorage.setItem('tccFormData', JSON.stringify(data));
+    }
+    
+    // Para alunos, criar TCC com orientador e depois enviar convite
     const tccPayload = { 
       ...data, 
       dataInicio: new Date(data.dataInicio).toISOString(),
-      orientadorId: user?.papel === "ALUNO" ? data.orientadorId : data.orientadorId,
-      mensagemOrientador: user?.papel === "ALUNO" ? data.mensagemOrientador : undefined
+      orientadorId: data.orientadorId, // Sempre incluir orientadorId
     };
+    
+    console.log("📦 Payload do TCC:", tccPayload);
+    console.log("🔄 Chamando createTcc...");
     
     create(tccPayload);
   };
@@ -78,7 +122,11 @@ export default function NewTccPage() {
           </p>
         </div>
       )}
-      <TccForm onSubmit={handleFormSubmit} isSubmitting={isCreating || isEnviandoConvite} />
+      <TccForm 
+        onSubmit={handleFormSubmit} 
+        isSubmitting={isCreating} 
+        onReset={resetForm ? () => {} : undefined}
+      />
     </div>
   );
 }

@@ -4,7 +4,6 @@ import com.leonardo.gestaotcc.enums.StatusTcc;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,14 +14,12 @@ import java.util.UUID;
 public class TccDto {
 
     @Data
-    @Builder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class TccCreateRequest {
         @NotNull(message = "ID do aluno é obrigatório")
         private UUID alunoId;
 
-        @NotNull(message = "ID do orientador é obrigatório")
         private UUID orientadorId;
 
         @NotBlank(message = "Título é obrigatório")
@@ -41,7 +38,6 @@ public class TccDto {
     }
 
     @Data
-    @Builder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class TccUpdateRequest {
@@ -55,7 +51,6 @@ public class TccDto {
     }
 
     @Data
-    @Builder
     @NoArgsConstructor
     @AllArgsConstructor
     public static class TccResponse {

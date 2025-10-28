@@ -17,9 +17,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import com.leonardo.gestaotcc.enums.PapelUsuario;
 import com.leonardo.gestaotcc.security.CustomUserDetails; // Assuming this class exists
+import com.leonardo.gestaotcc.entity.Usuario;
+import com.leonardo.gestaotcc.repository.UsuarioRepository;
+import com.leonardo.gestaotcc.exception.ResourceNotFoundException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Tag(name = "TCCs", description = "Gerenciamento de Trabalhos de Conclusão de Curso")
 @RestController
@@ -28,6 +32,9 @@ import com.leonardo.gestaotcc.security.CustomUserDetails; // Assuming this class
 public class TccController {
 
     private final TccService tccService;
+    private final UsuarioRepository usuarioRepository;
+    private final JdbcTemplate jdbcTemplate;
+    private final PasswordEncoder passwordEncoder;
 
     @Operation(summary = "Cria um novo TCC", responses = {
             @ApiResponse(responseCode = "201", description = "TCC criado com sucesso"),
@@ -78,8 +85,31 @@ public class TccController {
             @ApiResponse(responseCode = "404", description = "TCC não encontrado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<TccDto.TccResponse> getTccById(@PathVariable UUID id) {
-        TccDto.TccResponse response = tccService.get(id);
+    public ResponseEntity<TccDto.TccResponse> getTccById(@PathVariable UUID id, Authentication authentication) {
+        UUID authenticatedUserId = null;
+        PapelUsuario authenticatedUserRole = null;
+
+        if (authentication != null && authentication.isAuthenticated()) {
+            Object principal = authentication.getPrincipal();
+            
+            if (principal instanceof CustomUserDetails) {
+                CustomUserDetails userDetails = (CustomUserDetails) principal;
+                authenticatedUserId = userDetails.getId();
+                authenticatedUserRole = userDetails.getPapel();
+            } else if (principal instanceof String) {
+                String email = (String) principal;
+                try {
+                    Usuario usuario = usuarioRepository.findByEmail(email)
+                            .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com email: " + email));
+                    authenticatedUserId = usuario.getId();
+                    authenticatedUserRole = usuario.getPapel();
+                } catch (Exception e) {
+                    System.out.println("Erro ao carregar usuário por email: " + e.getMessage());
+                }
+            }
+        }
+
+        TccDto.TccResponse response = tccService.get(id, authenticatedUserId, authenticatedUserRole);
         return ResponseEntity.ok(response);
     }
 
@@ -94,9 +124,55 @@ public class TccController {
         return ResponseEntity.ok(responsePage);
     }
 
-    @Operation(summary = "Lista todos os TCCs paginados", responses = {
-            @ApiResponse(responseCode = "200", description = "Lista de TCCs retornada com sucesso")
+    @Operation(summary = "Deleta um TCC", responses = {
+            @ApiResponse(responseCode = "204", description = "TCC deletado com sucesso"),
+            @ApiResponse(responseCode = "404", description = "TCC não encontrado"),
+            @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para deletar este TCC")
     })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTcc(@PathVariable UUID id) {
+        tccService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/debug")
+    public ResponseEntity<Page<TccDto.TccResponse>> debugAllTccs(Pageable pageable) {
+        Page<TccDto.TccResponse> responsePage = tccService.listAll(pageable, null, null);
+        return ResponseEntity.ok(responsePage);
+    }
+
+    @GetMapping("/create-test-users")
+    public ResponseEntity<String> createTestUsers() {
+        try {
+            // Criar usuários de teste
+                jdbcTemplate.execute("""
+                    INSERT INTO usuarios (id, nome, email, senha_hash, papel, ativo, disponivel_para_orientacao) VALUES
+                    (gen_random_uuid(), 'João Silva Aluno', 'joao.aluno@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ALUNO', true, false),
+                    (gen_random_uuid(), 'Maria Santos Aluna', 'maria.aluna@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ALUNO', true, false),
+                    (gen_random_uuid(), 'Prof. Carlos Orientador', 'carlos.orientador@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ORIENTADOR', true, true),
+                    (gen_random_uuid(), 'Prof. Ana Orientadora', 'ana.orientadora@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ORIENTADOR', true, true)
+                    """);
+            return ResponseEntity.ok("Usuários de teste criados com sucesso!");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erro ao criar usuários: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/test-login")
+    public ResponseEntity<String> testLogin() {
+        try {
+            // Testar se o usuário existe
+            var usuario = usuarioRepository.findByEmail("joao.aluno@teste.com");
+            if (usuario.isPresent()) {
+                return ResponseEntity.ok("Usuário encontrado: " + usuario.get().getNome() + " - Hash: " + usuario.get().getSenhaHash());
+            } else {
+                return ResponseEntity.ok("Usuário não encontrado");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erro: " + e.getMessage());
+        }
+    }
+
     @GetMapping
     public ResponseEntity<Page<TccDto.TccResponse>> listAllTccs(Pageable pageable, Authentication authentication) {
         UUID authenticatedUserId = null;
@@ -104,17 +180,53 @@ public class TccController {
 
         if (authentication != null && authentication.isAuthenticated()) {
             Object principal = authentication.getPrincipal();
+            System.out.println("DEBUG: Principal type: " + principal.getClass().getName());
+            System.out.println("DEBUG: Principal: " + principal);
+            
             if (principal instanceof CustomUserDetails) {
                 CustomUserDetails userDetails = (CustomUserDetails) principal;
                 authenticatedUserId = userDetails.getId();
                 authenticatedUserRole = userDetails.getPapel();
+                System.out.println("DEBUG: Found CustomUserDetails - ID: " + authenticatedUserId + ", Role: " + authenticatedUserRole);
+            } else if (principal instanceof String) {
+                // Principal is the email (username) - load user details
+                String email = (String) principal;
+                System.out.println("DEBUG: Found String principal - Email: " + email);
+                try {
+                    Usuario usuario = usuarioRepository.findByEmail(email)
+                            .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com email: " + email));
+                    authenticatedUserId = usuario.getId();
+                    authenticatedUserRole = usuario.getPapel();
+                    System.out.println("DEBUG: Loaded user from email - ID: " + authenticatedUserId + ", Role: " + authenticatedUserRole);
+                } catch (Exception e) {
+                    System.out.println("Erro ao carregar usuário por email: " + e.getMessage());
+                }
             } else {
-                // Handle cases where principal is not CustomUserDetails (e.g., anonymous user, String username)
-                // For now, we'll leave authenticatedUserId and authenticatedUserRole as null
+                System.out.println("DEBUG: Principal is neither CustomUserDetails nor String - type: " + principal.getClass().getName());
             }
+        } else {
+            System.out.println("DEBUG: Authentication is null or not authenticated");
         }
 
+        System.out.println("DEBUG: Final authenticatedUserId: " + authenticatedUserId + ", authenticatedUserRole: " + authenticatedUserRole);
         Page<TccDto.TccResponse> responsePage = tccService.listAll(pageable, authenticatedUserId, authenticatedUserRole);
         return ResponseEntity.ok(responsePage);
+    }
+
+    @GetMapping("/test-password")
+    public ResponseEntity<String> testPassword() {
+        try {
+            Usuario usuario = usuarioRepository.findByEmail("joao.aluno@teste.com")
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+            
+            // Testar se a senha "password" corresponde ao hash
+            boolean matches = passwordEncoder.matches("password", usuario.getSenhaHash());
+            
+            return ResponseEntity.ok("Usuário: " + usuario.getNome() + 
+                    " - Hash: " + usuario.getSenhaHash() + 
+                    " - Senha 'password' matches: " + matches);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erro: " + e.getMessage());
+        }
     }
 }
