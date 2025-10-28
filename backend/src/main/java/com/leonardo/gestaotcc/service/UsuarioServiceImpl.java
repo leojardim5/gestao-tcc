@@ -9,6 +9,7 @@ import com.leonardo.gestaotcc.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final UsuarioMapper usuarioMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -27,9 +29,8 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (usuarioRepository.existsByEmail(request.getEmail())) {
             throw new ConflictException("Email já cadastrado.");
         }
-        // TODO: Implement password encoding
         Usuario usuario = usuarioMapper.toEntity(request);
-        usuario.setSenhaHash(request.getSenha()); // Temporário, será substituído por senha encodada
+        usuario.setSenhaHash(passwordEncoder.encode(request.getSenha()));
         usuario = usuarioRepository.save(usuario);
         return usuarioMapper.toResponse(usuario);
     }

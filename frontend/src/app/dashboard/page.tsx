@@ -14,10 +14,6 @@ export default function DashboardPage() {
   const { user } = useSessionStore();
   const router = useRouter();
 
-  // A fake user ID is needed for services that require it.
-  // In a real app, this would come from the logged-in user.
-  const fakeUserId = "f79a8a5d-3c20-4e38-bedf-2743e634f82b";
-
   useEffect(() => {
     if (!user) {
       router.push("/login");
@@ -31,9 +27,9 @@ export default function DashboardPage() {
   });
 
   const { data: notificacoesData, isLoading: isLoadingNotificacoes } = useQuery({
-    queryKey: ["notificacoes", { usuarioId: fakeUserId, lidas: false }],
-    queryFn: () => listNotificacoes({ usuarioId: fakeUserId, lidas: false }),
-    enabled: !!user,
+    queryKey: ["notificacoes", { usuarioId: user?.id, lidas: false }],
+    queryFn: () => listNotificacoes({ usuarioId: user?.id || "", lidas: false }),
+    enabled: !!user?.id,
   });
 
   if (!user) {

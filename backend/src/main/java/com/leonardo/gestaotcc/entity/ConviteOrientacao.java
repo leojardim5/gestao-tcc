@@ -31,7 +31,7 @@ public class ConviteOrientacao {
     @JoinColumn(name = "orientador_id", nullable = false)
     private Usuario orientador;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "tcc_id", nullable = false)
     private Tcc tcc;
 

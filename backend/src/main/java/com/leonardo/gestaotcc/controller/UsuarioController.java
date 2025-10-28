@@ -1,6 +1,9 @@
 package com.leonardo.gestaotcc.controller;
 
 import com.leonardo.gestaotcc.dto.UsuarioDto;
+import com.leonardo.gestaotcc.entity.Usuario;
+import com.leonardo.gestaotcc.mapper.UsuarioMapper;
+import com.leonardo.gestaotcc.repository.UsuarioRepository;
 import com.leonardo.gestaotcc.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -13,15 +16,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "Usuários", description = "Gerenciamento de usuários")
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("/api/usuarios")
 @RequiredArgsConstructor
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final UsuarioRepository usuarioRepository;
+    private final UsuarioMapper usuarioMapper;
 
     @Operation(summary = "Cria um novo usuário", responses = {
             @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso"),
@@ -72,6 +78,38 @@ public class UsuarioController {
     public ResponseEntity<Page<UsuarioDto.UsuarioResponse>> listUsuarios(Pageable pageable) {
         Page<UsuarioDto.UsuarioResponse> responsePage = usuarioService.list(pageable);
         return ResponseEntity.ok(responsePage);
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        return ResponseEntity.ok("UsuarioController OK!");
+    }
+
+    @Operation(summary = "Deleta todos os usuários exceto admin", responses = {
+            @ApiResponse(responseCode = "200", description = "Usuários deletados com sucesso")
+    })
+    @GetMapping("/delete-all")
+    public ResponseEntity<String> deleteAllUsuarios() {
+        List<Usuario> usuarios = usuarioRepository.findAll();
+        int count = 0;
+        for (Usuario usuario : usuarios) {
+            if (!usuario.getEmail().equals("admin@admin.com")) {
+                usuarioRepository.delete(usuario);
+                count++;
+            }
+        }
+        return ResponseEntity.ok("Deletados " + count + " usuários");
+    }
+
+    @GetMapping("/orientadores-simples")
+    public ResponseEntity<List<UsuarioDto.UsuarioResponse>> listOrientadoresSimples() {
+        List<Usuario> orientadores = usuarioRepository.findByPapelAndDisponivelParaOrientacaoTrue(
+            com.leonardo.gestaotcc.enums.PapelUsuario.ORIENTADOR
+        );
+        List<UsuarioDto.UsuarioResponse> response = orientadores.stream()
+            .map(usuarioMapper::toResponse)
+            .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Lista orientadores disponíveis para orientação", responses = {

@@ -6,7 +6,6 @@ import com.leonardo.gestaotcc.enums.PapelUsuario;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDate;
 import java.util.UUID;
 
 public interface TccService {
@@ -15,6 +14,7 @@ public interface TccService {
     TccDto.TccResponse assignOrientador(UUID tccId, UUID orientadorId);
     TccDto.TccResponse changeStatus(UUID id, StatusTcc newStatus);
     Page<TccDto.TccResponse> listByUsuario(UUID usuarioId, Pageable pageable);
-    TccDto.TccResponse get(UUID id);
+    TccDto.TccResponse get(UUID id, UUID authenticatedUserId, PapelUsuario authenticatedUserRole);
+    void delete(UUID id);
     Page<TccDto.TccResponse> listAll(Pageable pageable, UUID authenticatedUserId, PapelUsuario authenticatedUserRole);
 }

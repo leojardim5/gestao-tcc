@@ -15,32 +15,32 @@ interface AuthResponse {
 }
 
 export const listUsuarios = async (params: { page?: number; size?: number; papel?: PapelUsuario, nome?: string, email?: string } = {}): Promise<Page<Usuario>> => {
-  const response = await api.get('/usuarios', { params });
+  const response = await api.get('/api/usuarios', { params });
   return response.data;
 };
 
 export const getUsuario = async (id: string): Promise<Usuario> => {
-  const response = await api.get(`/usuarios/${id}`);
+  const response = await api.get(`/api/usuarios/${id}`);
   return response.data;
 };
 
 export const createUsuario = async (data: UsuarioCreateRequest): Promise<Usuario> => {
-  const response = await api.post('/usuarios', data);
+  const response = await api.post('/api/usuarios', data);
   return response.data;
 };
 
 export const updateUsuario = async (id: string, data: Partial<UsuarioCreateRequest>): Promise<Usuario> => {
-  const response = await api.patch(`/usuarios/${id}`, data);
+  const response = await api.patch(`/api/usuarios/${id}`, data);
   return response.data;
 };
 
 export const listOrientadoresDisponiveis = async (params: { page?: number; size?: number } = {}): Promise<Page<Usuario>> => {
-  const response = await api.get('/usuarios/orientadores-disponiveis', { params });
+  const response = await api.get('/api/usuarios/orientadores-disponiveis', { params });
   return response.data;
 };
 
 export const updateDisponibilidade = async (id: string, disponivel: boolean): Promise<Usuario> => {
-  const response = await api.put(`/usuarios/${id}`, { disponivelParaOrientacao: disponivel });
+  const response = await api.put(`/api/usuarios/${id}`, { disponivelParaOrientacao: disponivel });
   return response.data;
 };
 

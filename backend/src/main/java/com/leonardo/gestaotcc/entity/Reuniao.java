@@ -27,7 +27,7 @@ public class Reuniao {
     @UuidGenerator
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "tcc_id", nullable = false)
     private Tcc tcc;
 

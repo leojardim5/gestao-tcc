@@ -58,4 +58,11 @@ public class ConviteOrientacaoController {
         Page<ConviteResponseDto> responsePage = conviteOrientacaoService.listarConvitesPorOrientador(orientadorId, pageable);
         return ResponseEntity.ok(responsePage);
     }
+
+    @Operation(summary = "Contar convites pendentes para um orientador", description = "Retorna o número de convites pendentes para um orientador específico.")
+    @GetMapping("/orientador/{orientadorId}/pendentes/count")
+    public ResponseEntity<Long> contarConvitesPendentes(@PathVariable UUID orientadorId) {
+        long count = conviteOrientacaoService.contarConvitesPendentes(orientadorId);
+        return ResponseEntity.ok(count);
+    }
 }

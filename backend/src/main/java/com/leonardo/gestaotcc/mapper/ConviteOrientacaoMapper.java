@@ -5,12 +5,9 @@ import com.leonardo.gestaotcc.dto.convite.EnviarConviteDto;
 import com.leonardo.gestaotcc.entity.ConviteOrientacao;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
 
 @Mapper(componentModel = "spring")
 public interface ConviteOrientacaoMapper {
-
-    ConviteOrientacaoMapper INSTANCE = Mappers.getMapper(ConviteOrientacaoMapper.class);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "aluno", ignore = true)

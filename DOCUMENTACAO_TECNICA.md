@@ -22,15 +22,20 @@ O Sistema de Gestão de TCCs é uma aplicação web completa que centraliza e or
 
 ### Funcionalidades Principais
 - ✅ Gestão completa de usuários (Alunos, Orientadores, Coordenadores)
+- ✅ Sistema de autenticação JWT com refresh tokens
 - ✅ Criação e acompanhamento de TCCs
+- ✅ Sistema de convites de orientação
+- ✅ Controle de status de TCC (Rascunho, Pendente Aprovação, Em Andamento, etc.)
 - ✅ Sistema de submissões com upload de arquivos
 - ✅ Comentários e feedback em tempo real
 - ✅ Agendamento de reuniões
-- ✅ Notificações automáticas
+- ✅ Notificações automáticas com WebSocket
+- ✅ Badge de notificações na sidebar
 - ✅ Dashboard com estatísticas
 - ✅ Relatórios em PDF
-- ✅ Autenticação JWT
-- ✅ WebSocket para notificações em tempo real
+- ✅ Autorização baseada em roles
+- ✅ CORS configurado
+- ✅ Deletar TCC quando orientador recusa convite
 
 ## 🏗️ Arquitetura do Sistema
 
@@ -205,11 +210,23 @@ reunioes (
     tipo ENUM('PRESENCIAL', 'ONLINE')
 )
 
+-- Convites de Orientação
+convites_orientacao (
+    id UUID PRIMARY KEY,
+    aluno_id UUID REFERENCES usuarios(id),
+    orientador_id UUID REFERENCES usuarios(id),
+    tcc_id UUID REFERENCES tccs(id),
+    mensagem TEXT NOT NULL,
+    status ENUM('PENDENTE', 'ACEITO', 'REJEITADO'),
+    data_envio TIMESTAMP,
+    data_resposta TIMESTAMP
+)
+
 -- Notificações
 notificacoes (
     id UUID PRIMARY KEY,
     usuario_id UUID REFERENCES usuarios(id),
-    tipo ENUM('PRAZO', 'REUNIAO', 'COMENTARIO', 'SISTEMA'),
+    tipo ENUM('PRAZO', 'REUNIAO', 'COMENTARIO', 'SISTEMA', 'CONVITE_ORIENTACAO'),
     mensagem VARCHAR(255) NOT NULL,
     lida BOOLEAN DEFAULT false,
     criada_em TIMESTAMP
@@ -231,6 +248,8 @@ notificacoes (
 - `AuthController` - Autenticação e registro
 - `UsuarioController` - CRUD de usuários
 - `TccController` - CRUD de TCCs
+- `ConviteOrientacaoController` - Sistema de convites de orientação
+- `NotificationBadgeController` - Badge de notificações
 - `SubmissaoController` - Gerenciamento de submissões
 - `ComentarioController` - Sistema de comentários
 - `ReuniaoController` - Agendamento de reuniões
@@ -367,11 +386,26 @@ PATCH  /api/usuarios/{id}     # Desativar usuário
 
 ### TCCs
 ```
-GET    /api/tccs              # Listar TCCs
+GET    /api/tccs              # Listar TCCs (filtrado por usuário)
 POST   /api/tccs              # Criar TCC
-GET    /api/tccs/{id}         # Buscar TCC
+GET    /api/tccs/{id}         # Buscar TCC (com autorização)
 PUT    /api/tccs/{id}         # Atualizar TCC
 PATCH  /api/tccs/{id}/status  # Alterar status
+```
+
+### Convites de Orientação
+```
+POST   /api/convites/aluno/{id}                           # Enviar convite
+PUT    /api/convites/orientador/{id}/convite/{id}/responder # Responder convite
+GET    /api/convites/orientador/{id}/pendentes           # Listar convites pendentes
+GET    /api/convites/orientador/{id}/pendentes/count     # Contar convites pendentes
+GET    /api/convites/aluno/{id}                          # Listar convites do aluno
+```
+
+### Badge de Notificações
+```
+GET    /api/notification-badge/user/{id}/count    # Contar notificações totais
+GET    /api/notification-badge/user/{id}/total    # Detalhes das notificações
 ```
 
 ### Submissões

@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -34,7 +35,6 @@ public class ConviteOrientacaoService {
     private final TccRepository tccRepository;
     private final ConviteOrientacaoMapper conviteOrientacaoMapper;
     private final NotificacaoService notificacaoService;
-    // private final NotificacaoService notificacaoService; // Futura implementação
 
     @Transactional
     public ConviteResponseDto enviarConvite(EnviarConviteDto dto, UUID alunoId) {
@@ -70,6 +70,10 @@ public class ConviteOrientacaoService {
 
         convite = conviteOrientacaoRepository.save(convite);
 
+        // Atualizar o status do TCC para PENDENTE_APROVACAO quando o convite é enviado
+        tcc.setStatus(com.leonardo.gestaotcc.enums.StatusTcc.PENDENTE_APROVACAO);
+        tccRepository.save(tcc);
+
         // Enviar notificação para o orientador
         String mensagemNotificacao = String.format(
             "Você recebeu uma nova solicitação de orientação do aluno %s para o TCC: %s. " +
@@ -78,7 +82,8 @@ public class ConviteOrientacaoService {
             tcc.getTitulo()
         );
         
-        notificacaoService.push(orientador.getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemNotificacao);
+        // TEMPORÁRIO: Comentado até resolver o enum CONVITE_ORIENTACAO
+        // notificacaoService.push(orientador.getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemNotificacao);
 
         return conviteOrientacaoMapper.toResponse(convite);
     }
@@ -102,6 +107,7 @@ public class ConviteOrientacaoService {
         if (dto.getStatus() == StatusConvite.ACEITO) {
             Tcc tcc = convite.getTcc();
             tcc.setOrientador(convite.getOrientador());
+            tcc.setStatus(com.leonardo.gestaotcc.enums.StatusTcc.EM_ANDAMENTO); // Mudar para EM_ANDAMENTO quando aceito
             tccRepository.save(tcc);
             
             // Enviar notificação para o aluno sobre aceitação
@@ -111,16 +117,22 @@ public class ConviteOrientacaoService {
                 tcc.getTitulo(),
                 convite.getOrientador().getNome()
             );
-            notificacaoService.push(convite.getAluno().getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemAceito);
+            // TEMPORÁRIO: Comentado até resolver o enum CONVITE_ORIENTACAO
+            // notificacaoService.push(convite.getAluno().getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemAceito);
         } else {
+            // Quando rejeitado, deletar o TCC completamente
+            Tcc tcc = convite.getTcc();
+            tccRepository.delete(tcc);
+            
             // Enviar notificação para o aluno sobre rejeição
             String mensagemRejeitado = String.format(
                 "Sua solicitação de orientação para o TCC '%s' foi rejeitada pelo orientador %s. " +
-                "Você pode tentar com outro orientador disponível.",
+                "O TCC foi removido e você pode criar um novo.",
                 convite.getTcc().getTitulo(),
                 convite.getOrientador().getNome()
             );
-            notificacaoService.push(convite.getAluno().getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemRejeitado);
+            // TEMPORÁRIO: Comentado até resolver o enum CONVITE_ORIENTACAO
+            // notificacaoService.push(convite.getAluno().getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemRejeitado);
         }
 
         convite = conviteOrientacaoRepository.save(convite);
@@ -129,19 +141,57 @@ public class ConviteOrientacaoService {
 
     @Transactional(readOnly = true)
     public Page<ConviteResponseDto> listarConvitesPendentesPorOrientador(UUID orientadorId, Pageable pageable) {
-        return conviteOrientacaoRepository.findByOrientadorIdAndStatus(orientadorId, StatusConvite.PENDENTE, pageable)
-                .map(conviteOrientacaoMapper::toResponse);
+        // Usar método com JOIN FETCH para carregar entidades relacionadas
+        List<ConviteOrientacao> convites = conviteOrientacaoRepository.findByOrientadorIdAndStatusWithRelations(orientadorId, StatusConvite.PENDENTE);
+        
+        // Converter para Page manualmente
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), convites.size());
+        List<ConviteOrientacao> pageContent = convites.subList(start, end);
+        
+        return new org.springframework.data.domain.PageImpl<>(
+            pageContent.stream().map(conviteOrientacaoMapper::toResponse).toList(),
+            pageable,
+            convites.size()
+        );
     }
 
     @Transactional(readOnly = true)
     public Page<ConviteResponseDto> listarConvitesPorAluno(UUID alunoId, Pageable pageable) {
-        return conviteOrientacaoRepository.findByAlunoId(alunoId, pageable)
-                .map(conviteOrientacaoMapper::toResponse);
+        // Usar método com JOIN FETCH para carregar entidades relacionadas
+        List<ConviteOrientacao> convites = conviteOrientacaoRepository.findByAlunoIdWithRelations(alunoId);
+        
+        // Converter para Page manualmente
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), convites.size());
+        List<ConviteOrientacao> pageContent = convites.subList(start, end);
+        
+        return new org.springframework.data.domain.PageImpl<>(
+            pageContent.stream().map(conviteOrientacaoMapper::toResponse).toList(),
+            pageable,
+            convites.size()
+        );
     }
 
     @Transactional(readOnly = true)
     public Page<ConviteResponseDto> listarConvitesPorOrientador(UUID orientadorId, Pageable pageable) {
-        return conviteOrientacaoRepository.findByOrientadorId(orientadorId, pageable)
-                .map(conviteOrientacaoMapper::toResponse);
+        // Usar método com JOIN FETCH para carregar entidades relacionadas
+        List<ConviteOrientacao> convites = conviteOrientacaoRepository.findByOrientadorIdWithRelations(orientadorId);
+        
+        // Converter para Page manualmente
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), convites.size());
+        List<ConviteOrientacao> pageContent = convites.subList(start, end);
+        
+        return new org.springframework.data.domain.PageImpl<>(
+            pageContent.stream().map(conviteOrientacaoMapper::toResponse).toList(),
+            pageable,
+            convites.size()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public long contarConvitesPendentes(UUID orientadorId) {
+        return conviteOrientacaoRepository.countByOrientadorIdAndStatus(orientadorId, StatusConvite.PENDENTE);
     }
 }

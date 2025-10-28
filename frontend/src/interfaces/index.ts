@@ -8,6 +8,7 @@ export enum PapelUsuario {
 
 export enum StatusTcc {
   RASCUNHO = "RASCUNHO",
+  PENDENTE_APROVACAO = "PENDENTE_APROVACAO",
   EM_ANDAMENTO = "EM_ANDAMENTO",
   AGUARDANDO_DEFESA = "AGUARDANDO_DEFESA",
   CONCLUIDO = "CONCLUIDO",
@@ -95,14 +96,19 @@ export interface LoginRequest {
 export interface Tcc {
     id: string;
     titulo: string;
-    aluno: Usuario;
-    orientador: Usuario;
+    alunoId: string;
+    alunoNome: string;
+    orientadorId: string;
+    orientadorNome: string;
+    coorientadorId?: string;
+    coorientadorNome?: string;
     status: StatusTcc;
     tema: string;
     curso: string;
     dataInicio: string; // ISO Date string
-    dataTermino?: string; // ISO Date string
+    dataEntregaPrevista?: string; // ISO Date string
     criadoEm: string; // ISO Date string
+    atualizadoEm: string; // ISO Date string
 }
 
 export interface TccCreateRequest {

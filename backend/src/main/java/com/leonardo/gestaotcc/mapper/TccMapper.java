@@ -5,12 +5,9 @@ import com.leonardo.gestaotcc.entity.Tcc;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.factory.Mappers;
 
 @Mapper(componentModel = "spring")
 public interface TccMapper {
-
-    TccMapper INSTANCE = Mappers.getMapper(TccMapper.class);
 
     @Mapping(target = "aluno", ignore = true)
     @Mapping(target = "orientador", ignore = true)
