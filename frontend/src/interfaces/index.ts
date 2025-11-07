@@ -82,6 +82,31 @@ export interface Usuario {
   criadoEm: string; // ISO Date string
 }
 
+export interface IaSuggestionRequest {
+  alunoId: string;
+  alunoNome: string;
+  curso: string;
+  titulo: string;
+  tema: string;
+  resumo?: string;
+  mensagem?: string;
+  palavrasChave?: string[];
+}
+
+export interface IaSuggestionItem {
+  orientadorId: string;
+  orientadorNome: string;
+  score: number;
+  justificativa: string;
+  destaques?: string[];
+}
+
+export interface IaSuggestionResponse {
+  sugestoes: IaSuggestionItem[];
+  modelo?: string;
+  mensagemSistema?: string;
+}
+
 export interface UsuarioCreateRequest {
   nome: string;
   email: string;

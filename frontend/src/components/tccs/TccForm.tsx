@@ -3,16 +3,21 @@
 import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
-import { Tcc, TccCreateRequest, TccUpdateRequest, Usuario } from "@/interfaces";
+import { useEffect, useMemo, useState } from "react";
+import { Tcc, Usuario, IaSuggestionItem } from "@/interfaces";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { listUsuarios, listOrientadoresDisponiveis } from "@/services/usuarios";
+import { sugerirOrientadoresIa } from "@/services/ia";
+import { handleApiError } from "@/services/api";
 import { PapelUsuario } from "@/interfaces";
 import { Spinner } from "@/components/ui/Spinner";
+import { Sparkles } from "lucide-react";
+import { OrientadorSuggestionDialog } from "./OrientadorSuggestionDialog";
+import { useToast } from "@/hooks/useToast";
 
 const createTccSchema = (isAluno: boolean) => z.object({
   titulo: z.string().min(1, "Título é obrigatório"),
@@ -39,6 +44,7 @@ import { useSessionStore } from "@/store/session";
 
 export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccFormProps) {
   const { user } = useSessionStore();
+  const { showToast } = useToast();
 
   const isAluno = user?.papel === PapelUsuario.ALUNO;
 
@@ -52,11 +58,10 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
   const { data: orientadoresData, isLoading: isLoadingOrientadores, error: orientadoresError } = useQuery({
     queryKey: ['orientadores-disponiveis'],
     queryFn: () => listOrientadoresDisponiveis(),
-    enabled: isAluno, // Só buscar se for aluno
     retry: 1, // Tentar apenas 1 vez
   });
 
-  const { register, handleSubmit, control, reset, formState: { errors }, getValues } = useForm<TccFormInputs>({
+  const { register, handleSubmit, control, reset, formState: { errors }, getValues, setValue } = useForm<TccFormInputs>({
     resolver: zodResolver(createTccSchema(isAluno)),
     defaultValues: {
       ...defaultValues,
@@ -80,6 +85,88 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
       });
     }
   }, [onReset, reset, isAluno, user?.id]);
+
+  const orientadoresMap = useMemo(() => {
+    const map: Record<string, Usuario> = {};
+    orientadoresData?.content?.forEach((orientador) => {
+      map[orientador.id] = orientador;
+    });
+    return map;
+  }, [orientadoresData?.content]);
+
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [iaSuggestions, setIaSuggestions] = useState<IaSuggestionItem[]>([]);
+  const [iaMensagem, setIaMensagem] = useState<string | undefined>();
+  const [iaModelo, setIaModelo] = useState<string | undefined>();
+
+  const { mutate: sugerirOrientadores, isPending: isLoadingIa } = useMutation({
+    mutationFn: sugerirOrientadoresIa,
+    onSuccess: (data) => {
+      setIaSuggestions(data.sugestoes ?? []);
+      setIaMensagem(data.mensagemSistema ?? undefined);
+      setIaModelo(data.modelo ?? undefined);
+      setSuggestionsOpen(true);
+    },
+    onError: (error: unknown) => {
+      const { message } = handleApiError(error);
+      showToast(message || "Não foi possível obter sugestões da IA.", "error");
+    },
+  });
+
+  const extrairPalavrasChave = (texto: string) => {
+    return Array.from(
+      new Set(
+        texto
+          .toLowerCase()
+          .split(/[\s,.;:/]+/)
+          .filter((token) => token.length > 3)
+      )
+    ).slice(0, 12);
+  };
+
+  const handleSolicitarSugestoes = () => {
+    const values = getValues();
+    const alunoIdSelecionado = isAluno ? user.id : values.alunoId;
+
+    if (!alunoIdSelecionado) {
+      showToast("Selecione um aluno antes de pedir sugestões.", "warning");
+      return;
+    }
+
+    if (!values.titulo || !values.tema || !values.curso) {
+      showToast("Preencha título, tema e curso para gerar sugestões.", "warning");
+      return;
+    }
+
+    const alunoNome = isAluno
+      ? user.nome
+      : alunosData?.content?.find((aluno) => aluno.id === alunoIdSelecionado)?.nome ?? "Aluno";
+
+    const palavrasChave = extrairPalavrasChave(
+      [values.tema, values.curso, values.mensagemOrientador].filter(Boolean).join(" ")
+    );
+
+    sugerirOrientadores({
+      alunoId: alunoIdSelecionado,
+      alunoNome,
+      curso: values.curso,
+      titulo: values.titulo,
+      tema: values.tema,
+      resumo: values.mensagemOrientador || values.tema,
+      mensagem: values.mensagemOrientador,
+      palavrasChave,
+    });
+  };
+
+  const handleSelecionarOrientador = (orientadorId: string) => {
+    setValue("orientadorId", orientadorId, { shouldValidate: true, shouldDirty: true });
+    setSuggestionsOpen(false);
+    const orientador = orientadoresMap[orientadorId];
+    showToast(
+      orientador ? `Orientador ${orientador.nome} selecionado a partir da IA.` : "Orientador selecionado.",
+      "success"
+    );
+  };
 
   return (
     <form onSubmit={handleSubmit((data) => {
@@ -144,7 +231,29 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
             {errors.alunoId && <p className="text-sm font-medium text-destructive">{errors.alunoId.message}</p>}
         </div>
         <div className="grid gap-2">
-            <Label htmlFor="orientadorId">Orientador</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="orientadorId">Orientador</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 border-emerald-500/50 text-emerald-500 hover:border-emerald-500 hover:text-emerald-600"
+                onClick={handleSolicitarSugestoes}
+                disabled={isLoadingIa || (isAluno && (isLoadingOrientadores || !!orientadoresError))}
+              >
+                {isLoadingIa ? (
+                  <>
+                    <Spinner className="h-4 w-4" />
+                    Consultando…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Sugerir orientadores
+                  </>
+                )}
+              </Button>
+            </div>
             <Controller
                 name="orientadorId"
                 control={control}
@@ -201,6 +310,17 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
         {isSubmitting ? <Spinner className="mr-2 h-4 w-4 animate-spin" /> : null}
         {user?.papel === "ALUNO" ? "Enviar Solicitação" : "Salvar"}
       </Button>
+
+      <OrientadorSuggestionDialog
+        open={suggestionsOpen}
+        onOpenChange={setSuggestionsOpen}
+        isLoading={isLoadingIa}
+        sugestoes={iaSuggestions}
+        mensagemSistema={iaMensagem}
+        modelo={iaModelo}
+        orientadoresDetalhes={orientadoresMap}
+        onSelect={handleSelecionarOrientador}
+      />
     </form>
   );
 }

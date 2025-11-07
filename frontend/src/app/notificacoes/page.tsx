@@ -125,7 +125,7 @@ export default function NotificacoesPage() {
                             {convite.mensagem && (
                               <div className="mt-4 p-4 bg-white rounded-lg border">
                                 <h4 className="font-medium text-gray-900 mb-2">Mensagem do aluno:</h4>
-                                <p className="text-gray-700 italic">"{convite.mensagem}"</p>
+                                <p className="text-gray-700 italic">&ldquo;{convite.mensagem}&rdquo;</p>
                               </div>
                             )}
                           </div>
