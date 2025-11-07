@@ -45,7 +45,9 @@ export default function TccsPage() {
         <h1 className="text-2xl font-bold">TCCs</h1>
         {user?.papel === PapelUsuario.ALUNO && (
           <Link href="/tccs/new">
-            <Button>Novo TCC</Button>
+            <Button className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm">
+              Novo TCC
+            </Button>
           </Link>
         )}
       </div>

@@ -2,15 +2,11 @@
 -- Este é um hash de exemplo. Para produção, use um mecanismo seguro para gerar e armazenar senhas.
 
 -- Inserir usuários
-INSERT INTO usuarios (nome, email, senha_hash, papel, disponivel_para_orientacao)
+INSERT INTO usuarios (nome, email, senha_hash, papel, disponivel_para_orientacao, perfil_orientador)
 VALUES
-    ('Aluno Fulano', 'aluno@email.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ALUNO', false),
-    ('João Silva', 'joao@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ALUNO', false),
-    ('Maria Santos', 'maria@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ALUNO', false),
-    ('Orientador Ciclano', 'orientador@email.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ORIENTADOR', true),
-    ('Prof. Carlos Oliveira', 'carlos@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ORIENTADOR', true),
-    ('Prof. Ana Costa', 'ana@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ORIENTADOR', true),
-    ('Coordenador Beltrano', 'coordenador@email.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'COORDENADOR', true);
+    ('Aluno Fulano', 'aluno@email.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ALUNO', false, NULL),
+    ('Orientador Ciclano', 'orientador@email.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ORIENTADOR', true, 'Mentor com foco em engenharia de software, testes e práticas ágeis.'),
+    ('Coordenador Beltrano', 'coordenador@email.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'COORDENADOR', true, NULL);
 
 -- Inserir TCC
 DO $$

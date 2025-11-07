@@ -78,6 +78,7 @@ export interface Usuario {
   papel: PapelUsuario;
   ativo: boolean;
   disponivelParaOrientacao?: boolean;
+  perfilOrientador?: string;
   criadoEm: string; // ISO Date string
 }
 

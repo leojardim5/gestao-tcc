@@ -15,6 +15,8 @@ CREATE TABLE usuarios (
     email VARCHAR(255) NOT NULL UNIQUE,
     senha_hash VARCHAR(255) NOT NULL,
     papel papel_usuario NOT NULL,
+    disponivel_para_orientacao BOOLEAN NOT NULL DEFAULT FALSE,
+    perfil_orientador VARCHAR(4000),
     ativo BOOLEAN NOT NULL DEFAULT true,
     criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     atualizado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()

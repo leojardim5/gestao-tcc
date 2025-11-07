@@ -16,4 +16,4 @@ END $$;
 
 -- Recriar constraint
 ALTER TABLE notificacoes ADD CONSTRAINT notificacoes_tipo_check 
-    CHECK (tipo IN ('SUBMISSAO', 'REUNIAO', 'COMENTARIO', 'CONVITE_ORIENTACAO'));
+    CHECK (tipo IN ('PRAZO', 'REUNIAO', 'COMENTARIO', 'SISTEMA', 'CONVITE_ORIENTACAO'));

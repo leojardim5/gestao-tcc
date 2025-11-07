@@ -2,17 +2,17 @@
 -- Senha para todos: "password" -> hash: $2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G
 
 -- Inserir alunos
-INSERT INTO usuarios (id, nome, email, senha_hash, papel, ativo, disponivel_para_orientacao, criado_em, atualizado_em) VALUES
-(gen_random_uuid(), 'João Silva Aluno', 'joao.aluno@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ALUNO', true, false, NOW(), NOW()),
-(gen_random_uuid(), 'Maria Santos Aluna', 'maria.aluna@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ALUNO', true, false, NOW(), NOW());
+INSERT INTO usuarios (id, nome, email, senha_hash, papel, ativo, disponivel_para_orientacao, perfil_orientador, criado_em, atualizado_em) VALUES
+(gen_random_uuid(), 'João Silva Aluno', 'joao.aluno@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ALUNO', true, false, NULL, NOW(), NOW()),
+(gen_random_uuid(), 'Maria Santos Aluna', 'maria.aluna@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ALUNO', true, false, NULL, NOW(), NOW());
 
 -- Inserir orientadores
-INSERT INTO usuarios (id, nome, email, senha_hash, papel, ativo, disponivel_para_orientacao, criado_em, atualizado_em) VALUES
-(gen_random_uuid(), 'Prof. Carlos Orientador', 'carlos.orientador@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ORIENTADOR', true, true, NOW(), NOW()),
-(gen_random_uuid(), 'Prof. Ana Orientadora', 'ana.orientadora@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ORIENTADOR', true, true, NOW(), NOW());
+INSERT INTO usuarios (id, nome, email, senha_hash, papel, ativo, disponivel_para_orientacao, perfil_orientador, criado_em, atualizado_em) VALUES
+(gen_random_uuid(), 'Prof. Carlos Orientador', 'carlos.orientador@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ORIENTADOR', true, true, 'Mentor especializado em backend Java, DevOps e boas práticas.', NOW(), NOW()),
+(gen_random_uuid(), 'Prof. Ana Orientadora', 'ana.orientadora@teste.com', '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G', 'ORIENTADOR', true, true, 'Pesquisa em interfaces humanas, acessibilidade e front-end moderno.', NOW(), NOW());
 
 -- Verificar se os usuários foram inseridos
-SELECT id, nome, email, papel, ativo, disponivel_para_orientacao, criado_em 
+SELECT id, nome, email, papel, ativo, disponivel_para_orientacao, perfil_orientador, criado_em 
 FROM usuarios 
 WHERE email IN (
     'joao.aluno@teste.com', 

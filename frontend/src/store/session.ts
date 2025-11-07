@@ -4,8 +4,8 @@ import { PapelUsuario, Usuario } from '@/interfaces';
 
 interface SessionState {
   token: string | null;
-  user: Omit<Usuario, 'criadoEm' | 'ativo'> | null;
-  setSession: (token: string, user: Omit<Usuario, 'criadoEm' | 'ativo'>) => void;
+  user: Omit<Usuario, 'criadoEm'> | null;
+  setSession: (token: string, user: Omit<Usuario, 'criadoEm'>) => void;
   logout: () => void;
 }
 

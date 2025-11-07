@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS convites_orientacao (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    aluno_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    orientador_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    tcc_id UUID NOT NULL UNIQUE REFERENCES tccs(id) ON DELETE CASCADE,
+    mensagem TEXT NOT NULL,
+    status VARCHAR(255) NOT NULL CHECK (status IN ('PENDENTE','ACEITO','REJEITADO')),
+    data_envio TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    data_resposta TIMESTAMP WITH TIME ZONE
+);
+

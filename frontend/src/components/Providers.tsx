@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/Toaster";
+// Removed duplicate Toaster to avoid double popups (ToastContainer is used in AppLayout)
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,7 +19,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <Toaster />
     </QueryClientProvider>
   );
 }

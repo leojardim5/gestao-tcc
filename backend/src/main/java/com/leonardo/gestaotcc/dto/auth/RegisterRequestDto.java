@@ -22,4 +22,7 @@ public class RegisterRequestDto {
 
     @NotNull(message = "Papel é obrigatório")
     private PapelUsuario papel;
+
+    @Size(max = 4000, message = "Perfil do orientador deve ter no máximo 4000 caracteres")
+    private String perfilOrientador;
 }
