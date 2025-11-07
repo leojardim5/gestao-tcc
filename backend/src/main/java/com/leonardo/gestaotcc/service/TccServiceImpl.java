@@ -45,28 +45,31 @@ public class TccServiceImpl implements TccService {
         //     throw new ConflictException("Aluno já possui um TCC ativo.");
         // }
 
-        Usuario orientador = null;
+        Usuario orientadorSolicitado = null;
         if (request.getOrientadorId() != null) {
-            orientador = usuarioRepository.findById(request.getOrientadorId())
+            Usuario orientadorSelecionado = usuarioRepository.findById(request.getOrientadorId())
                     .orElseThrow(() -> new ResourceNotFoundException("Orientador não encontrado com ID: " + request.getOrientadorId()));
 
-            if (orientador.getPapel() != PapelUsuario.ORIENTADOR && orientador.getPapel() != PapelUsuario.COORDENADOR) {
+            if (orientadorSelecionado.getPapel() != PapelUsuario.ORIENTADOR && orientadorSelecionado.getPapel() != PapelUsuario.COORDENADOR) {
                 throw new BusinessException("O usuário com ID " + request.getOrientadorId() + " não é um orientador ou coordenador.");
             }
+
+            orientadorSolicitado = orientadorSelecionado;
         }
 
-        // Determinar status inicial baseado na presença do orientador
-        StatusTcc statusInicial = orientador != null ? StatusTcc.EM_ANDAMENTO : StatusTcc.PENDENTE_APROVACAO;
+        // O TCC fica aguardando aprovação do orientador indicado
+        StatusTcc statusInicial = StatusTcc.PENDENTE_APROVACAO;
 
         Tcc tcc = Tcc.builder()
                 .titulo(request.getTitulo())
                 .tema(request.getTema())
+                .resumo(request.getTema())
                 .curso(request.getCurso())
                 .dataInicio(request.getDataInicio())
                 .dataEntregaPrevista(request.getDataEntregaPrevista())
                 .aluno(aluno)
-                .orientador(orientador)
-                .status(statusInicial) // PENDENTE_APROVACAO se sem orientador, EM_ANDAMENTO se com orientador
+                .orientador(orientadorSolicitado)
+                .status(statusInicial)
                 .build();
 
         tcc = tccRepository.save(tcc);

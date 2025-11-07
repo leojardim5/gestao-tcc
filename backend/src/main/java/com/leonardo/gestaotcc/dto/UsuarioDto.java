@@ -36,6 +36,9 @@ public class UsuarioDto {
         
         @Builder.Default
         private boolean disponivelParaOrientacao = false;
+
+        @Size(max = 4000, message = "Perfil do orientador deve ter no máximo 4000 caracteres")
+        private String perfilOrientador;
     }
 
     @Data
@@ -47,6 +50,8 @@ public class UsuarioDto {
         private Boolean ativo;
         private PapelUsuario papel;
         private Boolean disponivelParaOrientacao;
+        @Size(max = 4000, message = "Perfil do orientador deve ter no máximo 4000 caracteres")
+        private String perfilOrientador;
     }
 
     @Data
@@ -62,5 +67,6 @@ public class UsuarioDto {
         private boolean disponivelParaOrientacao;
         private LocalDateTime criadoEm;
         private String senha;
+        private String perfilOrientador;
     }
 }

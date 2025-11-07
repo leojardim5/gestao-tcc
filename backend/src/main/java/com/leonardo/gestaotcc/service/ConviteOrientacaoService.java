@@ -70,7 +70,7 @@ public class ConviteOrientacaoService {
 
         convite = conviteOrientacaoRepository.save(convite);
 
-        // Atualizar o status do TCC para PENDENTE_APROVACAO quando o convite é enviado
+        // Garantir que o TCC permaneça como pendente enquanto aguarda resposta
         tcc.setStatus(com.leonardo.gestaotcc.enums.StatusTcc.PENDENTE_APROVACAO);
         tccRepository.save(tcc);
 
@@ -82,8 +82,7 @@ public class ConviteOrientacaoService {
             tcc.getTitulo()
         );
         
-        // TEMPORÁRIO: Comentado até resolver o enum CONVITE_ORIENTACAO
-        // notificacaoService.push(orientador.getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemNotificacao);
+        notificacaoService.push(orientador.getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemNotificacao);
 
         return conviteOrientacaoMapper.toResponse(convite);
     }
@@ -117,22 +116,29 @@ public class ConviteOrientacaoService {
                 tcc.getTitulo(),
                 convite.getOrientador().getNome()
             );
-            // TEMPORÁRIO: Comentado até resolver o enum CONVITE_ORIENTACAO
-            // notificacaoService.push(convite.getAluno().getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemAceito);
+            // Notificar aluno
+            notificacaoService.push(convite.getAluno().getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemAceito);
         } else {
-            // Quando rejeitado, deletar o TCC completamente
+            // Quando rejeitado, remover convite e TCC do aluno
             Tcc tcc = convite.getTcc();
-            tccRepository.delete(tcc);
-            
-            // Enviar notificação para o aluno sobre rejeição
-            String mensagemRejeitado = String.format(
-                "Sua solicitação de orientação para o TCC '%s' foi rejeitada pelo orientador %s. " +
-                "O TCC foi removido e você pode criar um novo.",
-                convite.getTcc().getTitulo(),
+
+            // Criar resposta antes de deletar entidades
+            ConviteResponseDto response = conviteOrientacaoMapper.toResponse(convite);
+
+            String base = String.format(
+                "Sua solicitação de orientação para o TCC '%s' foi rejeitada pelo orientador %s. O TCC foi removido e você pode criar um novo.",
+                tcc.getTitulo(),
                 convite.getOrientador().getNome()
             );
-            // TEMPORÁRIO: Comentado até resolver o enum CONVITE_ORIENTACAO
-            // notificacaoService.push(convite.getAluno().getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemRejeitado);
+            String motivo = dto.getMotivo();
+            String mensagemRejeitado = (motivo != null && !motivo.isBlank()) ? base + " Motivo: " + motivo : base;
+            notificacaoService.push(convite.getAluno().getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemRejeitado);
+
+            // Excluir primeiro o convite para evitar referências, depois o TCC
+            conviteOrientacaoRepository.delete(convite);
+            tccRepository.delete(tcc);
+
+            return response;
         }
 
         convite = conviteOrientacaoRepository.save(convite);

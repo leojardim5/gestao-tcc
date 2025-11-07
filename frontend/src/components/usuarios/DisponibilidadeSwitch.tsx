@@ -16,17 +16,17 @@ export function DisponibilidadeSwitch({ userId, initialValue }: DisponibilidadeS
   const [isAvailable, setIsAvailable] = useState(initialValue);
   const { showToast } = useToast();
   const queryClient = useQueryClient();
-  const { user, setSession } = useSessionStore();
+  const { user, token, setSession } = useSessionStore();
 
   const { mutate: updateAvailability, isPending } = useMutation({
-    mutationFn: (disponivel: boolean) => updateDisponibilidade(userId, disponivel),
+    mutationFn: (disponivel: boolean) => updateDisponibilidade(userId, disponivel, token),
     onSuccess: (updatedUser) => {
       queryClient.invalidateQueries({ queryKey: ["usuarios"] });
       showToast("Disponibilidade atualizada com sucesso!", "success");
       
       // Update session with new availability
       if (user) {
-        setSession(user.token || "", {
+        setSession(token || "", {
           ...user,
           disponivelParaOrientacao: updatedUser.disponivelParaOrientacao || false
         });

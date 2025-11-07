@@ -14,4 +14,7 @@ import lombok.NoArgsConstructor;
 public class ResponderConviteDto {
     @NotNull(message = "Status da resposta é obrigatório")
     private StatusConvite status;
+
+    // Opcional: motivo da rejeição
+    private String motivo;
 }

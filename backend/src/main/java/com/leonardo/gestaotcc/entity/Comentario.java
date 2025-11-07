@@ -33,8 +33,7 @@ public class Comentario {
     @JoinColumn(name = "autor_id", nullable = false)
     private Usuario autor;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String texto;
 
     @CreationTimestamp

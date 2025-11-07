@@ -4,6 +4,7 @@ import com.leonardo.gestaotcc.dto.auth.LoginRequestDto;
 import com.leonardo.gestaotcc.dto.auth.LoginResponseDto;
 import com.leonardo.gestaotcc.dto.auth.RegisterRequestDto;
 import com.leonardo.gestaotcc.entity.Usuario;
+import com.leonardo.gestaotcc.enums.PapelUsuario;
 import com.leonardo.gestaotcc.exception.ConflictException;
 import com.leonardo.gestaotcc.exception.ResourceNotFoundException;
 import com.leonardo.gestaotcc.repository.UsuarioRepository;
@@ -35,6 +36,7 @@ public class AuthService {
                 .senhaHash(passwordEncoder.encode(request.getSenha()))
                 .papel(request.getPapel())
                 .ativo(true)
+                .perfilOrientador(sanitizePerfilOrientador(request.getPapel(), request.getPerfilOrientador()))
                 .build();
 
         usuario = usuarioRepository.save(usuario);
@@ -77,5 +79,16 @@ public class AuthService {
                 usuario.getSenhaHash(),
                 usuario.getPapel()
         );
+    }
+
+    private String sanitizePerfilOrientador(PapelUsuario papel, String perfil) {
+        if (papel != PapelUsuario.ORIENTADOR) {
+            return null;
+        }
+        if (perfil == null) {
+            return null;
+        }
+        String trimmed = perfil.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

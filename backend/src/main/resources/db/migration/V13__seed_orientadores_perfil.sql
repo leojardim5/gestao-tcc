@@ -1,0 +1,88 @@
+-- Funcao auxiliar para inserir orientadores evitando duplicidade
+CREATE OR REPLACE FUNCTION inserir_orientador(
+    p_nome TEXT,
+    p_email TEXT,
+    p_senha TEXT,
+    p_perfil TEXT
+) RETURNS VOID AS $$
+BEGIN
+    INSERT INTO usuarios (id, nome, email, senha_hash, papel, ativo, disponivel_para_orientacao, perfil_orientador, criado_em, atualizado_em)
+    SELECT gen_random_uuid(), p_nome, p_email, p_senha, 'ORIENTADOR', TRUE, TRUE, p_perfil, NOW(), NOW()
+    WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = p_email);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Popula orientadores com perfis detalhados
+DO $$
+DECLARE
+    default_password CONSTANT TEXT := '$2a$10$3Z.dY4f.N1s/C2A8p.rJ5ee3c2G.fS2T6ED3.N.GN.dF.j2E.aB.G';
+BEGIN
+    PERFORM inserir_orientador('Adriana Alvim', 'adriana.alvim@orientadores.com', default_password,
+        'Professora titular com mais de duas decadas de atuacao em pesquisa operacional, liderando grupos que estudam meta heuristicas como busca tabu, GRASP, ILS e BRKGA aplicadas a problemas combinatorios de grande porte. Trabalha em cooperacoes com empresas de logistica, editoras cartograficas e centros de pesquisa internacionais para construir solvers customizados e pipelines de experimentacao com validacao estatistica. Mantem projetos sobre analise de redes sociais e metricas de centralidade para entender colaboracao em equipes de engenharia. Pode orientar TCC envolvendo implementacao de heuristicas para distribuicao de cargas, roteirizacao dinamica, clusterizacao de modulos de software ou exploracao de redes sociais de conhecimento.');
+
+    PERFORM inserir_orientador('Carlos Eduardo Mello', 'carlos.mello@orientadores.com', default_password,
+        'Cientista de dados com solida atuacao em mineracao de dados, sistemas de recomendacao, filtragem colaborativa e aprendizado ativo. Liderou implementacoes de plataformas de recomendacao em varejo digital, edu techs e bancos, definindo pipelines de coleta, limpeza, feature engineering e avaliacao online com experimentos A/B. Mantem estudos sobre interpretabilidade, cold start e uso de feedback implicito em fatoracao de matrizes. Pode orientar TCC que construam prototipos de recomendacao para dominios especificos, analisem metricas de ranking e diversidade, ou explorem aprendizado ativo para reduzir custo de rotulacao em grandes bases.');
+
+    PERFORM inserir_orientador('Laura Moraes', 'laura.moraes@orientadores.com', default_password,
+        'Engenheira de software e cofundadora de startup de data science, com passagem pelo programa Data Science for Social Good da University of Chicago. Trabalha na modelagem de dados publicos massivos, construcao de pipelines responsaveis de machine learning e disseminacao de tecnicas de explicabilidade para tomadores de decisao. Projetos recentes incluem modelos preditivos para risco de desemprego de longa duracao, pontuacao de vulnerabilidade social e monitoramento de politicas publicas em tempo real. Orienta TCC que transformem dados abertos em indicadores acionaveis, desenvolvam prototipos de sistemas inteligentes para governos ou empresas com foco etico ou avaliem desempenho de modelos preditivos em cenarios de impacto social.');
+
+    PERFORM inserir_orientador('Fabricio Pereira', 'fabricio.pereira@orientadores.com', default_password,
+        'Doutor em engenharia de dados especializado em processamento de linguagem natural, recuperacao da informacao e arquitetura de servicos cognitivos. Lidera projetos com transformers, autoencoders, LSTMs e pipelines de classificacao de documentos para midias, setor financeiro e governo, incluindo monitoramento de eventos em portais de noticias e sistemas de resposta automatica. Colabora com laboratorios internacionais em modelos de linguagem de larga escala e avalia estrategias de fine tuning e prompt engineering. Pode orientar TCC que construam pipelines de NLP do zero, comparem modelos para analise de sentimento e topicos, criem chatbots transacionais ou apliquem modelos generativos a grandes repositorios textuais corporativos.');
+
+    PERFORM inserir_orientador('Pedro Moura', 'pedro.moura@orientadores.com', default_password,
+        'Especialista em analise de algoritmos, aprendizado de maquina e otimizacao combinatoria, com experiencia em geoestatistica, simulacao estocastica e apoio a decisao industrial. Atua em projetos de logistica, transporte e energia trabalhando com ATD Lab PUC Rio e empresas de grande porte para integrar modelos preditivos, heuristicas e simuladores. Pesquisa metodos para combinar aprendizado profundo com meta heuristicas, calibracao de modelos por sensores IoT e visualizacao de cenarios. Indica TCC que explorem otimizacao de rotas com reforco, simuladores baseados em dados reais para planejamento urbano ou frameworks que integrem previsoes com algoritmos de alocacao de recursos.');
+
+    PERFORM inserir_orientador('Ana Cristina Bicharra', 'ana.bicharra@orientadores.com', default_password,
+        'Pesquisadora pioneira em inteligencia artificial, inteligencia coletiva e ambientes inteligentes, fundadora do laboratorio ADDLabs. Liderou parcerias com Petrobras em documentacao ativa, com MIT em inteligencia coletiva e com universidades europeias em ambientes inteligentes e interacao humano computacao. Possui ampla experiencia em design de agentes colaborativos, sensores contextuais, avaliacao de usabilidade e governanca de dados. Pode orientar TCC que proponham plataformas colaborativas com analitica em tempo real, ambientes inteligentes para educacao ou suporte tecnico, sistemas de recomendacao baseados em inteligencia coletiva ou estudos sobre etica e aceitacao de IA centrada em humanos.');
+
+    PERFORM inserir_orientador('Jefferson Simoes', 'jefferson.simoes@orientadores.com', default_password,
+        'Engenheiro de computacao com pesquisa em ciencia de redes, algoritmos probabilisticos e multimidia educacional. Examina redes complexas de interacao em cursos a distancia, modelagem probabilistica de conteudo multimidia e estrategias de visualizacao de grafos para tomada de decisao. Desenvolve ferramentas para analise de comunidades, tendencias de comunicacao e avaliacao de engajamento em ambientes digitais. Orienta TCC que estudem redes sociais de aprendizagem, algoritmos de grafos aplicados a EAD, deteccao de padroes por metodos probabilisticos ou prototipos de dashboards que revelem dinamicas de colaboracao.');
+
+    PERFORM inserir_orientador('Sidney Lucena', 'sidney.lucena@orientadores.com', default_password,
+        'Professor de redes de computadores com passagem pela RNP e experiencia em operacao de redes academicas de grande escala. Pesquisa gerenciamento, seguranca, deteccao de anomalias e arquiteturas SDN, integrando telemetria em tempo real, automacao de politicas e orquestracao baseada em controladores. Trabalha com empresas e provedores para implantar pipelines de analitica e respostas automaticas a incidentes. Pode orientar TCC sobre monitoramento com NetFlow e ML, sandbox SDN com OpenFlow, deteccao de intrusoes em redes corporativas ou avaliacao de desempenho entre topologias tradicionais e controladores programaveis.');
+
+    PERFORM inserir_orientador('Gleison Santos', 'gleison.santos@orientadores.com', default_password,
+        'Pesquisador em engenharia de software com foco em melhoria de processos, qualidade de servicos de TI e gestao do conhecimento. Atuou como avaliador lider do MPS.BR, consultor na implantacao de CMMI em empresas de desenvolvimento e coordenador de iniciativas de controle estatistico para times distribuidos. Mantem pesquisas sobre ambientes integrados de desenvolvimento, medicao continua e combinacao de metodos agiles com modelos de maturidade. Pode orientar TCC que realizem diagnostico de maturidade, projetem dashboards de indicadores de qualidade, implementem metricas para times agiles ou proponham planos de melhoria sustentados por dados reais de projetos.');
+
+    PERFORM inserir_orientador('Marcio Barros', 'marcio.barros@orientadores.com', default_password,
+        'Atua em search-based software engineering, aplicando meta-heuristicas ao design de software, refatoracao e planejamento de projetos. Pesquisa algoritmos geneticos, simulated annealing e otimizacao multiobjetivo para melhorar arquitetura e modularidade. Participa de iniciativas industriais e academicas de automacao de design. TCC indicados incluem otimizacao de arquitetura com heuristicas, refatoracao baseada em meta-heuristicas e suporte a planejamento de projetos com algoritmos evolutivos.');
+
+    PERFORM inserir_orientador('Paulo Sergio Medeiros', 'paulo.medeiros@orientadores.com', default_password,
+        'Pesquisador em engenharia de software baseada em evidencias, conduzindo estudos primarios e secundarios sobre inspecao, refatoracao, uso de Kanban e transferencia de tecnologia para industria. Lidera repositórios de evidencias, participa de redes internacionais de EBSE e atua em comites editoriais de revistas e eventos de engenharia de software. Trabalha com metodos de revisao sistematica, analises meta analiticas e protocolos de experimentos controlados. Indicacoes de TCC incluem revisoes sistematicas sobre temas emergentes, experimentos comparando tecnicas de teste ou estudos de campo que avaliem praticas ageis com coleta de metricas quantitativas e qualitativas.');
+
+    PERFORM inserir_orientador('Rodrigo Santos', 'rodrigo.santos@orientadores.com', default_password,
+        'Professor em engenharia de sistemas e informacao, lider do LabESC e atuante em ecossistemas de software, sistemas-de-sistemas e fatores humanos. Pesquisa negocios de software, colaboracao entre atores e engenharia de requisitos para dominios complexos. Participa de organizacao de eventos e redes de pesquisa em SI. Recomenda TCC sobre ecossistemas de plataformas, fatores sociais em times de software e estrategias de requisitos para sistemas complexos.');
+
+    PERFORM inserir_orientador('Henrique Prado', 'henrique.prado@orientadores.com', default_password,
+        'Especialista em modelagem organizacional alinhada a engenharia de software e transparencia. Pesquisa processos de negocio integrados a sistemas e metodos para garantir auditoria e dados abertos. Trabalha com alinhamento estrategico TI-negocio e avaliacao de softwares publicos. TCC sugeridos: modelagem de processos com definicao de requisitos, avaliacao de transparencia em sistemas governamentais e propostas de melhoria para softwares corporativos.');
+
+    PERFORM inserir_orientador('Bruna Diirr', 'bruna.diirr@orientadores.com', default_password,
+        'Docente em sistemas de informacao com foco em CSCW, BPM, colaboracao e governo eletronico. Lidera consultorias de mapeamento e redesenho de processos em orgaos publicos, pesquisa participacao digital e improvisacao organizacional em situacoes de emergencia e conduz estudos sobre gestao do conhecimento em ambientes colaborativos. Mantem projetos que integram workflow, analitica e dados abertos para promover transparencia e engajamento cidadáo. Orienta TCC em plataformas colaborativas para defesa civil, dashboards de transparencia, aplicacoes que combinem BPMN com indicadores em tempo real ou modelos de governanca do conhecimento em equipes distribuidas.');
+
+    PERFORM inserir_orientador('Geiza Hamazaki', 'geiza.hamazaki@orientadores.com', default_password,
+        'Pesquisadora em dados abertos, transparencia e cidades inteligentes. Coordena iniciativas de integracao de dados governamentais, sensores urbanos e plataformas de servicos publicos, promovendo interoperabilidade entre secretarias e modelos preditivos para politicas urbanas. Liderou reformas curriculares que aproximam pesquisa, extensao e laboratorios de inovacao cidadã. Seu grupo desenvolve arquiteturas de dados, APIs abertas e frameworks de governanca. Orienta TCC em avaliacao de portais de dados abertos, criacao de prototipos que combinem datasets urbanos com visualizacao interativa, integracao de sensores IoT com dashboards de gestao municipal ou analise de impacto de politicas de open data.');
+
+    PERFORM inserir_orientador('Tadeu de Classe', 'tadeu.classe@orientadores.com', default_password,
+        'Doutor em informatica com pesquisa em jogos digitais orientados a processos, ciberdemocracia e engajamento civico. Trabalha no desenho de serious games que simulam fluxos corporativos ou politicas publicas, integra tecnicas de storytelling com BPMN e participa de grupos que desenvolvem plataformas de votacao e deliberacao online. Possui experiencia profissional como analista de sistemas, o que facilita a traducao de requisitos em prototipos jogaveis. Orienta TCC em jogos educativos para treinamento corporativo, ferramentas ludicas de participacao cidadã, mecanismos de gamificacao para plataformas de debate ou avaliacoes de usabilidade em sistemas de ciberdemocracia.');
+
+    PERFORM inserir_orientador('Jose Ricardo Cereja', 'jose.cereja@orientadores.com', default_password,
+        'Coordenador de inovacao tecnologica, cultural e social na PROPGPI, articulando projetos que integram tecnologia com impacto social, cultura e economia criativa. Atua na incubacao de iniciativas digitais com metodologias de inovacao aberta, mentora equipes multidisciplinares e fomenta redes universidade empresa comunidade para desenvolvimento regional. Trabalha com roadmaps de inovacao, indicadores de impacto e captacao de recursos para projetos de base tecnologica. Pode orientar TCC que proponham planos de inovacao para desafios sociais, aplicativos de inclusao cultural, estudos sobre adocao de tecnologias emergentes em comunidades ou modelos de governanca para laboratorios de inovacao publica.');
+
+    PERFORM inserir_orientador('Simone Bacellar', 'simone.bacellar@orientadores.com', default_password,
+        'Professora associada, fundadora do NAU e autora de referencia em e usabilidade. Atua ha mais de vinte anos em interacao humano computador, acessibilidade, uso de cores e ergonomia de interfaces, assessorando projetos corporativos e governamentais em etapas de pesquisa com usuarios, prototipacao e testes de usabilidade. Lidera iniciativas de inclusao digital, normas de acessibilidade web e desenvolvimento de guias de estilo acessiveis para portais. Orienta TCC que realizem avaliacoes heuristicas, estudos com usuarios com diferentes necessidades, propostas de redesign acessivel, definicao de design systems inclusivos ou experimentos sobre percepcao visual em interfaces de alto impacto.');
+
+    PERFORM inserir_orientador('Maria Augusta Nunes', 'maria.nunes@orientadores.com', default_password,
+        'Pesquisadora em educacao, computacao afetiva e inovacao tecnologica. Criadora do projeto Almanaques da Computacao, integra tecnicas lúdicas como HQs, jogos e narrativas interativas a estrategias de ensino de computacao e pensamento computacional. Desenvolve estudos sobre deteccao de emocao, adaptacao de conteudo em tempo real e analise de engajamento em ambientes de aprendizagem online. Atua tambem em propriedade intelectual, orientando sobre registro de softwares e protecao de ativos digitais. Indica TCC que criem materiais educativos inovadores, prototipos de tutores inteligentes sensiveis a emocao, plataformas para monitorar engajamento em sala híbrida ou estudos sobre regulacao e licenciamento de produtos de TI.');
+
+    PERFORM inserir_orientador('Mariano Pimentel', 'mariano.pimentel@orientadores.com', default_password,
+        'Especialista em sistemas colaborativos, comunicacao mediada por computador e educacao online. Lider do grupo ComunicaTEC e idealizador da rede social Tagarelas, pesquisa chat, foruns, microblogs e cibercultura docente para potencializar interacao em ambientes virtuais de aprendizagem. Trabalha com analise de conversacao, métricas de engajamento e desenho de atividades colaborativas. Orienta TCC que criem ferramentas de chat educacional com analitica em tempo real, explorem integracao de redes sociais no apoio a disciplinas, avaliem praticas de moderacao em foruns ou investiguem estrategias de microblogging para aprendizagem em comunidade.');
+
+    PERFORM inserir_orientador('Sean Siqueira', 'sean.siqueira@orientadores.com', default_password,
+        'Professor em ciencia da web, sistemas de informacao e informatica na educacao. Investiga filosofia da tecnologia, impactos sociais e eticos de sistemas de informacao, microlearning, learn sourcing e plataformas colaborativas de aprendizagem. Liderou o PPGI, coordenou comissoes da SBC e participa de iniciativas de tecnologia responsavel, discutindo design especulativo e experiencias de aprendizado mediadas por buscadores e chatbots. Orienta TCC que desenhem plataformas de microlearning com curadoria automatizada, analisem impactos eticos de algoritmos de recomendacao, construam ontologias educacionais para web semantica ou estudem processos de aprendizagem mediados por chat e busca.');
+
+    PERFORM inserir_orientador('Vania Felix Dias', 'vania.dias@orientadores.com', default_password,
+        'Pesquisadora em UX e interfaces de usuario com ampla experiencia em ergonomia, design centrado no usuario e avaliacao de usabilidade em sistemas corporativos, academicos e governamentais. Atua em projetos interdisciplinares com psicologia, design grafico e engenharia, conduzindo estudos de campo, testes moderados e validacao de prototipos de alta fidelidade. Investiga arquitetura de informacao, microinteracoes e acessibilidade web. Pode orientar TCC que realizem avaliacao de usabilidade com usuarios reais, construam design systems acessiveis, proponham prototipos focados em mobilidade ou estudem processos de UX research para produtos digitais complexos.');
+END;
+$$;
+
+

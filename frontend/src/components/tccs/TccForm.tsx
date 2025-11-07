@@ -106,7 +106,7 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="dataInicio">Data de Início</Label>
+        <Label htmlFor="dataInicio">Data de Solicitação</Label>
         <Input 
           id="dataInicio" 
           type="date" 
@@ -132,7 +132,7 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
                   render={({ field }) => (
                       <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!defaultValues}>
                           <SelectTrigger><SelectValue placeholder="Selecione um aluno" /></SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="max-h-64 overflow-y-auto">
                               {alunosData?.content.map((aluno) => (
                                   <SelectItem key={aluno.id} value={aluno.id}>{aluno.nome}</SelectItem>
                               ))}
@@ -157,7 +157,7 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
                                     : "Selecione um orientador"
                             } />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-64 overflow-y-auto">
                             {isLoadingOrientadores ? (
                                 <SelectItem value="loading" disabled>Carregando...</SelectItem>
                             ) : orientadoresError ? (

@@ -82,7 +82,8 @@ export default function LoginPage() {
         email: data.usuario.email, 
         papel: data.usuario.papel,
         ativo: data.usuario.ativo,
-        disponivelParaOrientacao: data.usuario.disponivelParaOrientacao || false
+        disponivelParaOrientacao: data.usuario.disponivelParaOrientacao || false,
+        perfilOrientador: data.usuario.perfilOrientador
       });
       router.push("/dashboard");
     },

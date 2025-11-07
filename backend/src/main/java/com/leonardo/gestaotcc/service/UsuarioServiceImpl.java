@@ -2,6 +2,7 @@ package com.leonardo.gestaotcc.service;
 
 import com.leonardo.gestaotcc.dto.UsuarioDto;
 import com.leonardo.gestaotcc.entity.Usuario;
+import com.leonardo.gestaotcc.enums.PapelUsuario;
 import com.leonardo.gestaotcc.exception.ConflictException;
 import com.leonardo.gestaotcc.exception.ResourceNotFoundException;
 import com.leonardo.gestaotcc.mapper.UsuarioMapper;
@@ -31,6 +32,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
         Usuario usuario = usuarioMapper.toEntity(request);
         usuario.setSenhaHash(passwordEncoder.encode(request.getSenha()));
+        usuario.setPerfilOrientador(sanitizePerfilOrientador(usuario.getPapel(), request.getPerfilOrientador()));
         usuario = usuarioRepository.save(usuario);
         return usuarioMapper.toResponse(usuario);
     }
@@ -41,7 +43,15 @@ public class UsuarioServiceImpl implements UsuarioService {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com ID: " + id));
 
+        String perfilAnterior = usuario.getPerfilOrientador();
         usuarioMapper.updateEntityFromDto(request, usuario);
+        if (usuario.getPapel() != PapelUsuario.ORIENTADOR) {
+            usuario.setPerfilOrientador(null);
+        } else if (request.getPerfilOrientador() != null) {
+            usuario.setPerfilOrientador(sanitizePerfilOrientador(usuario.getPapel(), request.getPerfilOrientador()));
+        } else {
+            usuario.setPerfilOrientador(perfilAnterior);
+        }
         usuario = usuarioRepository.save(usuario);
         return usuarioMapper.toResponse(usuario);
     }
@@ -76,5 +86,16 @@ public class UsuarioServiceImpl implements UsuarioService {
             com.leonardo.gestaotcc.enums.PapelUsuario.ORIENTADOR, 
             pageable
         ).map(usuarioMapper::toResponse);
+    }
+
+    private String sanitizePerfilOrientador(PapelUsuario papel, String perfil) {
+        if (papel != PapelUsuario.ORIENTADOR) {
+            return null;
+        }
+        if (perfil == null) {
+            return null;
+        }
+        String trimmed = perfil.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

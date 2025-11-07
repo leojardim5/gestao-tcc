@@ -30,6 +30,7 @@ export default function DashboardPage() {
     queryKey: ["notificacoes", { usuarioId: user?.id, lidas: false }],
     queryFn: () => listNotificacoes({ usuarioId: user?.id || "", lidas: false }),
     enabled: !!user?.id,
+    staleTime: 5000,
   });
 
   if (!user) {

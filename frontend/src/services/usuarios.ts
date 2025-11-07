@@ -1,6 +1,5 @@
 import api from './api';
 import { Page, PapelUsuario, Usuario, UsuarioCreateRequest, LoginRequest } from '@/interfaces';
-import { useSessionStore } from '@/store/session';
 
 // Define the expected response structure for authentication
 interface AuthResponse {
@@ -11,6 +10,9 @@ interface AuthResponse {
     nome: string;
     email: string;
     papel: PapelUsuario;
+    ativo: boolean;
+    disponivelParaOrientacao?: boolean;
+    perfilOrientador?: string;
   };
 }
 
@@ -34,13 +36,21 @@ export const updateUsuario = async (id: string, data: Partial<UsuarioCreateReque
   return response.data;
 };
 
-export const listOrientadoresDisponiveis = async (params: { page?: number; size?: number } = {}): Promise<Page<Usuario>> => {
-  const response = await api.get('/api/usuarios/orientadores-disponiveis', { params });
+export const listOrientadoresDisponiveis = async (params: { page?: number; size?: number; sort?: string } = {}): Promise<Page<Usuario>> => {
+  const response = await api.get('/api/usuarios/orientadores-disponiveis', {
+    params: {
+      page: 0,
+      size: 200,
+      sort: "nome,asc",
+      ...params,
+    },
+  });
   return response.data;
 };
 
-export const updateDisponibilidade = async (id: string, disponivel: boolean): Promise<Usuario> => {
-  const response = await api.put(`/api/usuarios/${id}`, { disponivelParaOrientacao: disponivel });
+export const updateDisponibilidade = async (id: string, disponivel: boolean, token?: string | null): Promise<Usuario> => {
+  const config = token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
+  const response = await api.put(`/api/usuarios/${id}`, { disponivelParaOrientacao: disponivel }, config);
   return response.data;
 };
 
