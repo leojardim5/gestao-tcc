@@ -35,6 +35,7 @@ public class ConviteOrientacaoService {
     private final TccRepository tccRepository;
     private final ConviteOrientacaoMapper conviteOrientacaoMapper;
     private final NotificacaoService notificacaoService;
+    private final GoogleDocsService googleDocsService;
 
     @Transactional
     public ConviteResponseDto enviarConvite(EnviarConviteDto dto, UUID alunoId) {
@@ -107,6 +108,7 @@ public class ConviteOrientacaoService {
             Tcc tcc = convite.getTcc();
             tcc.setOrientador(convite.getOrientador());
             tcc.setStatus(com.leonardo.gestaotcc.enums.StatusTcc.EM_ANDAMENTO); // Mudar para EM_ANDAMENTO quando aceito
+            criarDocumentoGoogleSeNecessario(tcc);
             tccRepository.save(tcc);
             
             // Enviar notificação para o aluno sobre aceitação
@@ -143,6 +145,29 @@ public class ConviteOrientacaoService {
 
         convite = conviteOrientacaoRepository.save(convite);
         return conviteOrientacaoMapper.toResponse(convite);
+    }
+
+    private void criarDocumentoGoogleSeNecessario(Tcc tcc) {
+        if (tcc.getAluno() == null || tcc.getOrientador() == null) {
+            return;
+        }
+        if (tcc.getGoogleFileId() != null) {
+            return;
+        }
+
+        String titulo = String.format("TCC - %s - %s", tcc.getAluno().getNome(), tcc.getTitulo());
+        List<String> editores = List.of(
+                tcc.getAluno().getEmail(),
+                tcc.getOrientador().getEmail()
+        );
+
+        googleDocsService.criarDocumento(titulo, editores)
+                .ifPresent(metadata -> {
+                    tcc.setGoogleFileId(metadata.fileId());
+                    tcc.setGoogleWebViewLink(metadata.webViewLink());
+                    tcc.setGoogleWebEditLink(metadata.webEditLink());
+                    tcc.setGoogleDocCriadoEm(LocalDateTime.now());
+                });
     }
 
     @Transactional(readOnly = true)

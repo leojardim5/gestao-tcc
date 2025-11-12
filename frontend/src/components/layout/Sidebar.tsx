@@ -8,6 +8,7 @@ import { useSessionStore } from "@/store/session";
 import { isOrientador } from "@/utils/guards";
 import { Book, Home, Users, Bell, Calendar, Settings } from "lucide-react";
 import { listNotificacoes } from "@/services/notificacoes";
+import { useTccNotificationsStore, selectTotalPendingTccs } from "@/store/tccNotifications";
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard", icon: Home, allowed: () => true },
@@ -21,6 +22,7 @@ const navLinks = [
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useSessionStore();
+  const totalTccPendencias = useTccNotificationsStore(selectTotalPendingTccs);
   const { data: unreadNotificacoes } = useQuery({
     queryKey: ["notificacoes", { usuarioId: user?.id, lidas: false }, "sidebar"],
     queryFn: () => listNotificacoes({ usuarioId: user?.id || "", lidas: false }),
@@ -41,7 +43,13 @@ export function Sidebar() {
             return null;
           }
           const isActive = pathname.startsWith(link.href);
-          const showBadge = link.href === "/notificacoes" && unreadCount > 0;
+          const showBadge =
+            (link.href === "/notificacoes" && unreadCount > 0) ||
+            (link.href === "/tccs" && totalTccPendencias > 0);
+          const badgeCount =
+            link.href === "/notificacoes"
+              ? unreadCount
+              : totalTccPendencias;
           return (
             <Link
               key={link.href}
@@ -52,12 +60,12 @@ export function Sidebar() {
               )}
             >
               <span className="flex items-center gap-3">
-                <link.icon className="h-5 w-5" />
-                {link.label}
+              <link.icon className="h-5 w-5" />
+              {link.label}
               </span>
               {showBadge && (
                 <span className="ml-3 inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white">
-                  {unreadCount > 99 ? "99+" : unreadCount}
+                  {badgeCount > 99 ? "99+" : badgeCount}
                 </span>
               )}
             </Link>

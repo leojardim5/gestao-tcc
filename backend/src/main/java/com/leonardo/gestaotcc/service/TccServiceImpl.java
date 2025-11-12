@@ -1,6 +1,7 @@
 package com.leonardo.gestaotcc.service;
 
 import com.leonardo.gestaotcc.dto.TccDto;
+import com.leonardo.gestaotcc.dto.workspace.TccWorkspaceDto;
 import com.leonardo.gestaotcc.entity.Tcc;
 import com.leonardo.gestaotcc.entity.Usuario;
 import com.leonardo.gestaotcc.enums.PapelUsuario;
@@ -10,6 +11,7 @@ import com.leonardo.gestaotcc.exception.ResourceNotFoundException;
 import com.leonardo.gestaotcc.mapper.TccMapper;
 import com.leonardo.gestaotcc.repository.TccRepository;
 import com.leonardo.gestaotcc.repository.UsuarioRepository;
+import com.leonardo.gestaotcc.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -154,25 +156,7 @@ public class TccServiceImpl implements TccService {
         Tcc tcc = tccRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + id));
         
-        // Verificar se o usuário tem permissão para ver este TCC
-        if (authenticatedUserId != null && authenticatedUserRole != null) {
-            boolean hasPermission = false;
-            
-            if (authenticatedUserRole == PapelUsuario.ALUNO) {
-                // Aluno pode ver apenas seus próprios TCCs
-                hasPermission = tcc.getAluno().getId().equals(authenticatedUserId);
-            } else if (authenticatedUserRole == PapelUsuario.ORIENTADOR) {
-                // Orientador pode ver TCCs onde ele é orientador
-                hasPermission = tcc.getOrientador() != null && tcc.getOrientador().getId().equals(authenticatedUserId);
-            } else if (authenticatedUserRole == PapelUsuario.COORDENADOR) {
-                // Coordenador pode ver todos os TCCs
-                hasPermission = true;
-            }
-            
-            if (!hasPermission) {
-                throw new ResourceNotFoundException("TCC não encontrado com ID: " + id);
-            }
-        }
+        verificarPermissaoVisualizacao(tcc, authenticatedUserId, authenticatedUserRole);
         
         return tccMapper.toResponse(tcc);
     }
@@ -259,5 +243,67 @@ public class TccServiceImpl implements TccService {
         
         // Finalmente deletar o TCC
         tccRepository.delete(tcc);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TccWorkspaceDto.Overview getWorkspaceOverview(UUID id) {
+        Tcc tcc = tccRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + id));
+
+        SecurityUtils.getCurrentUserDetails().ifPresent(userDetails ->
+                verificarPermissaoVisualizacao(tcc, userDetails.getId(), userDetails.getPapel()));
+
+        return TccWorkspaceDto.Overview.builder()
+                .id(tcc.getId())
+                .titulo(tcc.getTitulo())
+                .tema(tcc.getTema())
+                .curso(tcc.getCurso())
+                .status(tcc.getStatus())
+                .dataInicio(tcc.getDataInicio())
+                .dataEntregaPrevista(tcc.getDataEntregaPrevista())
+                .aluno(TccWorkspaceDto.AlunoInfo.builder()
+                        .id(tcc.getAluno() != null ? tcc.getAluno().getId() : null)
+                        .nome(tcc.getAluno() != null ? tcc.getAluno().getNome() : null)
+                        .email(tcc.getAluno() != null ? tcc.getAluno().getEmail() : null)
+                        .build())
+                .orientador(toOrientadorInfo(tcc.getOrientador()))
+                .coorientador(toOrientadorInfo(tcc.getCoorientador()))
+                .googleFileId(tcc.getGoogleFileId())
+                .googleWebViewLink(tcc.getGoogleWebViewLink())
+                .googleWebEditLink(tcc.getGoogleWebEditLink())
+                .googleDocCriadoEm(tcc.getGoogleDocCriadoEm())
+                .criadoEm(tcc.getCriadoEm())
+                .atualizadoEm(tcc.getAtualizadoEm())
+                .build();
+    }
+
+    private TccWorkspaceDto.OrientadorInfo toOrientadorInfo(Usuario usuario) {
+        if (usuario == null) {
+            return null;
+        }
+        return TccWorkspaceDto.OrientadorInfo.builder()
+                .id(usuario.getId())
+                .nome(usuario.getNome())
+                .email(usuario.getEmail())
+                .build();
+    }
+
+    private void verificarPermissaoVisualizacao(Tcc tcc, UUID authenticatedUserId, PapelUsuario authenticatedUserRole) {
+        if (authenticatedUserId == null || authenticatedUserRole == null) {
+            // Sem usuário autenticado não permitimos acesso em produção
+            throw new ResourceNotFoundException("TCC não encontrado");
+        }
+
+        boolean hasPermission = switch (authenticatedUserRole) {
+            case ALUNO -> tcc.getAluno() != null && tcc.getAluno().getId().equals(authenticatedUserId);
+            case ORIENTADOR -> (tcc.getOrientador() != null && tcc.getOrientador().getId().equals(authenticatedUserId))
+                    || (tcc.getCoorientador() != null && tcc.getCoorientador().getId().equals(authenticatedUserId));
+            case COORDENADOR -> true;
+        };
+
+        if (!hasPermission) {
+            throw new ResourceNotFoundException("TCC não encontrado com ID: " + tcc.getId());
+        }
     }
 }

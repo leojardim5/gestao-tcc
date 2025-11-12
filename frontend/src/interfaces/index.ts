@@ -20,6 +20,13 @@ export enum StatusSubmissao {
   REPROVADO = "REPROVADO",
 }
 
+export enum StatusCronogramaEtapa {
+  PENDENTE = "PENDENTE",
+  EM_ANDAMENTO = "EM_ANDAMENTO",
+  CONCLUIDO = "CONCLUIDO",
+  ATRASADA = "ATRASADA",
+}
+
 export enum TipoReuniao {
   PRESENCIAL = "PRESENCIAL",
   ONLINE = "ONLINE",
@@ -135,6 +142,59 @@ export interface Tcc {
     dataEntregaPrevista?: string; // ISO Date string
     criadoEm: string; // ISO Date string
     atualizadoEm: string; // ISO Date string
+}
+
+export interface PessoaResumo {
+    id: string;
+    nome: string;
+    email: string;
+}
+
+export interface TccWorkspaceOverview {
+    id: string;
+    titulo: string;
+    tema: string;
+    curso: string;
+    status: StatusTcc;
+    dataInicio: string | null;
+    dataEntregaPrevista: string | null;
+    aluno: PessoaResumo | null;
+    orientador: PessoaResumo | null;
+    coorientador: PessoaResumo | null;
+    googleFileId?: string | null;
+    googleWebViewLink?: string | null;
+    googleWebEditLink?: string | null;
+    googleDocCriadoEm?: string | null;
+    criadoEm: string;
+    atualizadoEm: string;
+}
+
+export interface CronogramaEtapa {
+    id: string;
+    nome: string;
+    dataInicio: string;
+    dataFim: string;
+    status: StatusCronogramaEtapa;
+    concluidoEm?: string | null;
+    observacao?: string | null;
+    criadoEm: string;
+    atualizadoEm: string;
+}
+
+export interface CronogramaEtapaCreateRequest {
+    nome: string;
+    dataInicio: string;
+    dataFim: string;
+    status?: StatusCronogramaEtapa;
+    observacao?: string;
+}
+
+export interface CronogramaResumo {
+    tccId: string;
+    total: number;
+    pendentes: number;
+    emAndamento: number;
+    concluidas: number;
 }
 
 export interface TccCreateRequest {

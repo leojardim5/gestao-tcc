@@ -2,6 +2,22 @@
 
 Este é o backend do sistema de Gestão de TCCs, construído com Spring Boot 3, PostgreSQL, MapStruct, Lombok e OpenAPI.
 
+## Integração com IA (sugestão de orientadores)
+
+O serviço de sugestões de orientadores pode usar um modelo externo (OpenAI/Cursor). Para habilitar:
+
+1. Defina as variáveis de ambiente antes de subir o backend:
+   ```bash
+   setx CURSOR_AI_ENABLED true
+   setx CURSOR_AI_API_KEY "sua_chave_secreta"
+   setx CURSOR_AI_PROVIDER "GEMINI"
+   setx CURSOR_AI_API_URL "https://generativelanguage.googleapis.com/v1beta/models"
+   setx CURSOR_AI_MODEL "gemini-1.5-flash"
+   ```
+   > No PowerShell, reinicie o terminal após `setx` ou use `$env:CURSOR_AI_ENABLED="true"` para a sessão atual.
+
+2. Inicie o backend normalmente. A aplicação lerá esses valores e a IA passará a responder. Sem a chave, o sistema usa um fallback heurístico local.
+
 ## Pré-requisitos
 
 Antes de começar, certifique-se de ter os seguintes softwares instalados:

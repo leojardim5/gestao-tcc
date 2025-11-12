@@ -16,7 +16,6 @@ import { handleApiError } from "@/services/api";
 import { PapelUsuario } from "@/interfaces";
 import { Spinner } from "@/components/ui/Spinner";
 import { Sparkles } from "lucide-react";
-import { OrientadorSuggestionDialog } from "./OrientadorSuggestionDialog";
 import { useToast } from "@/hooks/useToast";
 
 const createTccSchema = (isAluno: boolean) => z.object({
@@ -61,7 +60,7 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
     retry: 1, // Tentar apenas 1 vez
   });
 
-  const { register, handleSubmit, control, reset, formState: { errors }, getValues, setValue } = useForm<TccFormInputs>({
+  const { register, handleSubmit, control, reset, watch, formState: { errors }, getValues } = useForm<TccFormInputs>({
     resolver: zodResolver(createTccSchema(isAluno)),
     defaultValues: {
       ...defaultValues,
@@ -94,18 +93,20 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
     return map;
   }, [orientadoresData?.content]);
 
-  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [iaSuggestions, setIaSuggestions] = useState<IaSuggestionItem[]>([]);
-  const [iaMensagem, setIaMensagem] = useState<string | undefined>();
-  const [iaModelo, setIaModelo] = useState<string | undefined>();
+  const [selectOpen, setSelectOpen] = useState(false);
 
   const { mutate: sugerirOrientadores, isPending: isLoadingIa } = useMutation({
     mutationFn: sugerirOrientadoresIa,
     onSuccess: (data) => {
-      setIaSuggestions(data.sugestoes ?? []);
-      setIaMensagem(data.mensagemSistema ?? undefined);
-      setIaModelo(data.modelo ?? undefined);
-      setSuggestionsOpen(true);
+      const orderedSugestoes = [...(data.sugestoes ?? [])].sort(
+        (a, b) => (b.score ?? 0) - (a.score ?? 0)
+      );
+      setIaSuggestions(orderedSugestoes);
+      setSelectOpen(true);
+      if (data.mensagemSistema) {
+        showToast(data.mensagemSistema, "info");
+      }
     },
     onError: (error: unknown) => {
       const { message } = handleApiError(error);
@@ -124,6 +125,28 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
     ).slice(0, 12);
   };
 
+  const [
+    tituloValue,
+    temaValue,
+    cursoValue,
+    mensagemValue,
+    alunoIdValue,
+    orientadorIdValue,
+  ] = watch(["titulo", "tema", "curso", "mensagemOrientador", "alunoId", "orientadorId"]);
+
+  const camposObrigatoriosPreenchidos =
+    tituloValue?.trim() &&
+    temaValue?.trim() &&
+    cursoValue?.trim() &&
+    mensagemValue?.trim();
+
+  const mensagemMinimaValida = (mensagemValue?.trim().length ?? 0) >= 10;
+
+  const podeUsarIa =
+    Boolean(camposObrigatoriosPreenchidos) &&
+    mensagemMinimaValida &&
+    (isAluno ? Boolean(user?.id) : Boolean(alunoIdValue));
+
   const handleSolicitarSugestoes = () => {
     const values = getValues();
     const alunoIdSelecionado = isAluno ? user.id : values.alunoId;
@@ -133,8 +156,13 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
       return;
     }
 
-    if (!values.titulo || !values.tema || !values.curso) {
-      showToast("Preencha título, tema e curso para gerar sugestões.", "warning");
+    if (!values.titulo || !values.tema || !values.curso || !values.mensagemOrientador) {
+      showToast("Preencha título, tema, curso e a mensagem/descrição para gerar sugestões.", "warning");
+      return;
+    }
+
+    if (values.mensagemOrientador.trim().length < 10) {
+      showToast("Escreva pelo menos 10 caracteres na mensagem/descrição antes de pedir sugestões da IA.", "warning");
       return;
     }
 
@@ -158,14 +186,45 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
     });
   };
 
-  const handleSelecionarOrientador = (orientadorId: string) => {
-    setValue("orientadorId", orientadorId, { shouldValidate: true, shouldDirty: true });
-    setSuggestionsOpen(false);
-    const orientador = orientadoresMap[orientadorId];
-    showToast(
-      orientador ? `Orientador ${orientador.nome} selecionado a partir da IA.` : "Orientador selecionado.",
-      "success"
-    );
+  const sugestaoPorId = useMemo(() => {
+    const map = new Map<string, IaSuggestionItem & { ordem: number }>();
+    iaSuggestions.forEach((sugestao, index) => {
+      map.set(sugestao.orientadorId, { ...sugestao, ordem: index });
+    });
+    return map;
+  }, [iaSuggestions]);
+
+  const orientadorSelecionado = orientadorIdValue ? orientadoresMap[orientadorIdValue] : undefined;
+  const sugestaoSelecionada = orientadorIdValue ? sugestaoPorId.get(orientadorIdValue) : undefined;
+
+  const orientadoresOrdenados = useMemo(() => {
+    const lista = orientadoresData?.content ? [...orientadoresData.content] : [];
+    return lista.sort((a, b) => {
+      const sa = sugestaoPorId.get(a.id);
+      const sb = sugestaoPorId.get(b.id);
+      if (sa && sb) {
+        return sa.ordem - sb.ordem;
+      }
+      if (sa) return -1;
+      if (sb) return 1;
+      return a.nome.localeCompare(b.nome);
+    });
+  }, [orientadoresData?.content, sugestaoPorId]);
+
+  const getScoreColor = (score?: number) => {
+    if (score === undefined) return "text-slate-400";
+    if (score >= 80) return "text-emerald-400";
+    if (score >= 60) return "text-lime-400";
+    if (score >= 40) return "text-amber-400";
+    return "text-rose-400";
+  };
+
+  const getScoreBadgeStyles = (score?: number) => {
+    if (score === undefined) return "bg-slate-200 text-slate-500";
+    if (score >= 80) return "bg-emerald-500/15 text-emerald-500 border-emerald-500/40";
+    if (score >= 60) return "bg-lime-500/15 text-lime-600 border-lime-500/40";
+    if (score >= 40) return "bg-amber-500/15 text-amber-600 border-amber-500/40";
+    return "bg-rose-500/15 text-rose-500 border-rose-500/40";
   };
 
   return (
@@ -239,7 +298,12 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
                 size="sm"
                 className="flex items-center gap-2 border-emerald-500/50 text-emerald-500 hover:border-emerald-500 hover:text-emerald-600"
                 onClick={handleSolicitarSugestoes}
-                disabled={isLoadingIa || (isAluno && (isLoadingOrientadores || !!orientadoresError))}
+                disabled={
+                  isLoadingIa ||
+                  !podeUsarIa ||
+                  isLoadingOrientadores ||
+                  !!orientadoresError
+                }
               >
                 {isLoadingIa ? (
                   <>
@@ -258,26 +322,86 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
                 name="orientadorId"
                 control={control}
                 render={({ field }) => (
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectTrigger>
-                            <SelectValue placeholder={
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectOpen(false);
+                        const orientador = orientadoresMap[value];
+                        if (orientador) {
+                          showToast(`Orientador ${orientador.nome} selecionado.`, "success");
+                        }
+                      }}
+                      value={field.value}
+                      open={selectOpen}
+                      onOpenChange={setSelectOpen}
+                    >
+                        <SelectTrigger className="min-h-[52px] py-2">
+                          {orientadorSelecionado ? (
+                            <span className="flex w-full items-center justify-between gap-3">
+                              <span className="flex min-w-0 flex-col text-left">
+                                <span className="truncate text-sm font-medium">{orientadorSelecionado.nome}</span>
+                                {sugestaoSelecionada?.justificativa && (
+                                  <span className="text-[11px] text-muted-foreground line-clamp-1">
+                                    {sugestaoSelecionada.justificativa}
+                                  </span>
+                                )}
+                              </span>
+                              {sugestaoSelecionada?.score !== undefined && (
+                                <span
+                                  className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${getScoreBadgeStyles(sugestaoSelecionada.score)}`}
+                                >
+                                  <span
+                                    className={`h-2 w-2 rounded-full ${getScoreColor(sugestaoSelecionada.score).replace("text", "bg")}`}
+                                  />
+                                  {`${Math.round(sugestaoSelecionada.score)}%`}
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <SelectValue
+                              placeholder={
                                 isLoadingOrientadores 
                                     ? "Carregando orientadores..." 
                                     : "Selecione um orientador"
-                            } />
+                              }
+                            />
+                          )}
                         </SelectTrigger>
                         <SelectContent className="max-h-64 overflow-y-auto">
                             {isLoadingOrientadores ? (
                                 <SelectItem value="loading" disabled>Carregando...</SelectItem>
                             ) : orientadoresError ? (
                                 <SelectItem value="error" disabled>Erro ao carregar orientadores</SelectItem>
-                            ) : orientadoresData?.content?.length === 0 ? (
+                            ) : orientadoresOrdenados.length === 0 ? (
                                 <SelectItem value="empty" disabled>Nenhum orientador disponível</SelectItem>
-                            ) : orientadoresData?.content?.map((orientador) => (
-                                <SelectItem key={orientador.id} value={orientador.id}>
-                                    {orientador.nome}
-                                </SelectItem>
-                            ))}
+                            ) : orientadoresOrdenados.map((orientador) => {
+                                const sugestao = sugestaoPorId.get(orientador.id);
+                                const scoreTexto = sugestao ? `${Math.round(sugestao.score)}%` : undefined;
+                                return (
+                                    <SelectItem key={orientador.id} value={orientador.id}>
+                                        <span className="flex items-center justify-between gap-3">
+                                          <span className="flex flex-col text-left">
+                                            <span className="font-medium text-sm">{orientador.nome}</span>
+                                            {sugestao?.justificativa && (
+                                              <span className="text-[11px] text-muted-foreground line-clamp-2">
+                                                {sugestao.justificativa}
+                                              </span>
+                                            )}
+                                          </span>
+                                          {scoreTexto && (
+                                            <span
+                                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${getScoreBadgeStyles(sugestao?.score)}`}
+                                            >
+                                              <span
+                                                className={`h-2 w-2 rounded-full ${getScoreColor(sugestao?.score).replace("text", "bg")}`}
+                                              />
+                                              {scoreTexto}
+                                            </span>
+                                          )}
+                                        </span>
+                                    </SelectItem>
+                                );
+                            })}
                         </SelectContent>
                     </Select>
                 )}
@@ -310,17 +434,6 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
         {isSubmitting ? <Spinner className="mr-2 h-4 w-4 animate-spin" /> : null}
         {user?.papel === "ALUNO" ? "Enviar Solicitação" : "Salvar"}
       </Button>
-
-      <OrientadorSuggestionDialog
-        open={suggestionsOpen}
-        onOpenChange={setSuggestionsOpen}
-        isLoading={isLoadingIa}
-        sugestoes={iaSuggestions}
-        mensagemSistema={iaMensagem}
-        modelo={iaModelo}
-        orientadoresDetalhes={orientadoresMap}
-        onSelect={handleSelecionarOrientador}
-      />
     </form>
   );
 }

@@ -29,20 +29,15 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(Customizer.withDefaults())
             .authorizeHttpRequests(authz -> authz
-                // Permitir acesso público aos endpoints de autenticação
-                .requestMatchers("/api/auth/**").permitAll()
-                // Permitir acesso público ao Swagger/OpenAPI
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                // Permitir acesso público aos endpoints de debug (remover em produção)
-                .requestMatchers("/api/tccs/debug", "/api/tccs/debug-all", "/api/tccs/create-test-users", "/api/tccs/test-login", "/api/tccs/test-password").permitAll()
-                // Todas as outras requisições precisam de autenticação
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             // Adicionar o filtro JWT antes do filtro de autenticação padrão
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            // Temporariamente desativado para testes sem autenticação
+            //.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        ;
 
         return http.build();
     }

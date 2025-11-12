@@ -8,6 +8,7 @@ import { formatDate } from "@/utils/date";
 import { MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/DropdownMenu";
 import Link from "next/link";
+import { useTccNotificationsStore, selectPendingCountForTcc } from "@/store/tccNotifications";
 
 interface TccTableProps {
   tccs: Tcc[];
@@ -40,9 +41,10 @@ export function TccTable({ tccs, onEdit, onDelete }: TccTableProps) {
         {tccs.map((tcc) => (
           <TableRow key={tcc.id}>
             <TableCell className="font-medium">
-                <Link href={`/tccs/${tcc.id}`} className="hover:underline">
-                    {tcc.titulo}
-                </Link>
+              <Link href={`/tccs/${tcc.id}/workspace`} className="hover:underline">
+                {tcc.titulo}
+              </Link>
+              <TccNotificationBadge tccId={tcc.id} />
             </TableCell>
             <TableCell>{tcc.alunoNome || 'N/A'}</TableCell>
             <TableCell>{tcc.orientadorNome || 'N/A'}</TableCell>
@@ -66,7 +68,7 @@ export function TccTable({ tccs, onEdit, onDelete }: TccTableProps) {
                   <DropdownMenuLabel>Ações</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => onEdit(tcc)}>Editar</DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href={`/tccs/${tcc.id}`}>Ver Detalhes</Link>
+                    <Link href={`/tccs/${tcc.id}/workspace`}>Abrir Workspace</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => onDelete(tcc.id)} className="text-red-600">
@@ -79,5 +81,19 @@ export function TccTable({ tccs, onEdit, onDelete }: TccTableProps) {
         ))}
       </TableBody>
     </Table>
+  );
+}
+
+function TccNotificationBadge({ tccId }: { tccId: string }) {
+  const pendingCount = useTccNotificationsStore(selectPendingCountForTcc(tccId));
+
+  if (!pendingCount || pendingCount <= 0) {
+    return null;
+  }
+
+  return (
+    <span className="ml-2 inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-orange-500 px-2 py-0.5 text-[11px] font-semibold text-white">
+      {pendingCount > 99 ? "99+" : pendingCount}
+    </span>
   );
 }

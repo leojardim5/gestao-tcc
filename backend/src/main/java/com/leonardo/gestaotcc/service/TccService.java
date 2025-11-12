@@ -1,6 +1,7 @@
 package com.leonardo.gestaotcc.service;
 
 import com.leonardo.gestaotcc.dto.TccDto;
+import com.leonardo.gestaotcc.dto.workspace.TccWorkspaceDto;
 import com.leonardo.gestaotcc.enums.StatusTcc;
 import com.leonardo.gestaotcc.enums.PapelUsuario;
 import org.springframework.data.domain.Page;
@@ -17,4 +18,5 @@ public interface TccService {
     TccDto.TccResponse get(UUID id, UUID authenticatedUserId, PapelUsuario authenticatedUserRole);
     void delete(UUID id);
     Page<TccDto.TccResponse> listAll(Pageable pageable, UUID authenticatedUserId, PapelUsuario authenticatedUserRole);
+    TccWorkspaceDto.Overview getWorkspaceOverview(UUID id);
 }
