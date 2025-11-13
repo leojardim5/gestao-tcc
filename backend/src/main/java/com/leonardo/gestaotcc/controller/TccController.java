@@ -1,7 +1,10 @@
 package com.leonardo.gestaotcc.controller;
 
 import com.leonardo.gestaotcc.dto.TccDto;
+import com.leonardo.gestaotcc.dto.cronograma.CronogramaResumoDto;
+import com.leonardo.gestaotcc.dto.workspace.TccWorkspaceDto;
 import com.leonardo.gestaotcc.enums.StatusTcc;
+import com.leonardo.gestaotcc.service.CronogramaEtapaService;
 import com.leonardo.gestaotcc.service.TccService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.security.core.Authentication;
 import com.leonardo.gestaotcc.enums.PapelUsuario;
@@ -32,6 +37,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class TccController {
 
     private final TccService tccService;
+    private final CronogramaEtapaService cronogramaEtapaService;
     private final UsuarioRepository usuarioRepository;
     private final JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
@@ -211,6 +217,35 @@ public class TccController {
         System.out.println("DEBUG: Final authenticatedUserId: " + authenticatedUserId + ", authenticatedUserRole: " + authenticatedUserRole);
         Page<TccDto.TccResponse> responsePage = tccService.listAll(pageable, authenticatedUserId, authenticatedUserRole);
         return ResponseEntity.ok(responsePage);
+    }
+
+    @GetMapping("/{id}/workspace/overview")
+    @Operation(summary = "Retorna informações gerais do workspace do TCC")
+    public ResponseEntity<TccWorkspaceDto.Overview> getWorkspaceOverview(@PathVariable UUID id) {
+        TccWorkspaceDto.Overview overview = tccService.getWorkspaceOverview(id);
+        return ResponseEntity.ok(overview);
+    }
+
+    @PostMapping("/{id}/workspace/document")
+    @Operation(summary = "Garante que o documento do TCC exista e retorna o overview atualizado")
+    public ResponseEntity<TccWorkspaceDto.Overview> ensureWorkspaceDocument(@PathVariable UUID id) {
+        TccWorkspaceDto.Overview overview = tccService.ensureGoogleDocument(id);
+        return ResponseEntity.ok(overview);
+    }
+
+    @GetMapping("/{id}/workspace/document/comments")
+    @Operation(summary = "Lista comentários do documento principal do TCC no Google Docs")
+    public ResponseEntity<List<TccWorkspaceDto.DocComment>> listWorkspaceDocumentComments(@PathVariable UUID id) {
+        List<TccWorkspaceDto.DocComment> comments = tccService.listGoogleDocComments(id);
+        return ResponseEntity.ok(comments);
+    }
+
+    @GetMapping("/cronograma/resumos")
+    @Operation(summary = "Retorna resumos de cronogramas para múltiplos TCCs")
+    public ResponseEntity<Map<UUID, CronogramaResumoDto>> getCronogramaResumos(
+            @RequestParam List<UUID> ids
+    ) {
+        return ResponseEntity.ok(cronogramaEtapaService.obterResumos(ids));
     }
 
     @GetMapping("/test-password")

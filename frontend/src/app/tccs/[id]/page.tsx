@@ -8,11 +8,18 @@ import { handleApiError } from "@/services/api";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/Spinner";
 import { TccUpdateRequest } from "@/interfaces";
+import { useEffect } from "react";
 
 export default function TccDetailsPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const { showToast } = useToast();
   const router = useRouter();
+
+  // Prefetch TCCs list page
+  useEffect(() => {
+    router.prefetch("/tccs");
+    router.prefetch(`/tccs/${id}/workspace`);
+  }, [router, id]);
 
   const { data: tcc, isLoading } = useQuery({
     queryKey: ["tccs", id],

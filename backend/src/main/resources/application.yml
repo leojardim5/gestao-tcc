@@ -19,3 +19,11 @@ spring:
 
 server:
   port: 8081
+
+cursor:
+  ai:
+    enabled: ${CURSOR_AI_ENABLED:false}
+    api-key: ${CURSOR_AI_API_KEY:}
+    api-url: ${CURSOR_AI_API_URL:https://api.openai.com/v1/chat/completions}
+    model: ${CURSOR_AI_MODEL:cursor-small-latest}
+    provider: ${CURSOR_AI_PROVIDER:OPENAI}

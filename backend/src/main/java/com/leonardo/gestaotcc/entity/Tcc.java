@@ -73,6 +73,18 @@ public class Tcc {
     @JoinColumn(name = "coorientador_id", referencedColumnName = "id")
     private Usuario coorientador;
 
+    @Column(name = "google_file_id")
+    private String googleFileId;
+
+    @Column(name = "google_web_view_link")
+    private String googleWebViewLink;
+
+    @Column(name = "google_web_edit_link")
+    private String googleWebEditLink;
+
+    @Column(name = "google_doc_criado_em")
+    private LocalDateTime googleDocCriadoEm;
+
     @CreationTimestamp
     @Column(name = "criado_em", updatable = false)
     private LocalDateTime criadoEm;

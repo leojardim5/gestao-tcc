@@ -19,11 +19,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col md:ml-64 w-full md:w-auto">
         <Header />
-        <div className="p-4 md:p-6 flex-1 overflow-y-auto">{children}</div>
+        <div className="h-screen overflow-y-auto pt-24 pb-4 md:pb-6 px-4 md:px-6">{children}</div>
       </main>
       <ToastContainer />
     </div>

@@ -1,5 +1,5 @@
 import api from './api';
-import { Page, Tcc, TccCreateRequest, TccUpdateRequest, StatusTcc } from '@/interfaces';
+import { Page, Tcc, TccCreateRequest, TccUpdateRequest, StatusTcc, TccWorkspaceOverview, GoogleDocComment } from '@/interfaces';
 
 interface ListTccsParams {
   page?: number;
@@ -15,7 +15,7 @@ export const listTccs = async (params: ListTccsParams = {}): Promise<Page<Tcc>> 
   return response.data;
 };
 
-export const getTcc = async (id: string): Promise<Tcc> => {
+export const getTccById = async (id: string): Promise<Tcc> => {
   const response = await api.get(`/api/tccs/${id}`);
   return response.data;
 };
@@ -44,4 +44,19 @@ export const assignOrientador = async ({ tccId, orientadorId }: { tccId: string;
 
 export const removeTcc = async (id: string): Promise<void> => {
     await api.delete(`/api/tccs/${id}`);
+};
+
+export const getTccWorkspaceOverview = async (id: string): Promise<TccWorkspaceOverview> => {
+  const response = await api.get(`/api/tccs/${id}/workspace/overview`);
+  return response.data;
+};
+
+export const ensureTccWorkspaceDocument = async (id: string): Promise<TccWorkspaceOverview> => {
+  const response = await api.post(`/api/tccs/${id}/workspace/document`);
+  return response.data;
+};
+
+export const listTccDocumentComments = async (id: string): Promise<GoogleDocComment[]> => {
+  const response = await api.get(`/api/tccs/${id}/workspace/document/comments`);
+  return response.data;
 };

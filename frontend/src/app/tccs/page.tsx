@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listTccs, removeTcc } from "@/services/tccs";
 import { TccTable } from "@/components/tccs/TccTable";
@@ -13,6 +14,9 @@ import { useToast } from "@/hooks/useToast";
 import { handleApiError } from "@/services/api";
 import { useSessionStore } from "@/store/session";
 import { PapelUsuario } from "@/interfaces";
+import { getCronogramaResumos } from "@/services/cronograma";
+import { useTccNotificationsStore, selectTotalPendingTccs } from "@/store/tccNotifications";
+import { Badge } from "@/components/ui/Badge";
 
 export default function TccsPage() {
   const router = useRouter();
@@ -21,11 +25,54 @@ export default function TccsPage() {
   const { searchParams, setQueryParams } = useQueryParams();
   const { user } = useSessionStore();
   const page = Number(searchParams.get("page") ?? 1) - 1;
+  const setNotificationCounts = useTccNotificationsStore((state) => state.setCounts);
+  const totalPendingNotifications = useTccNotificationsStore(selectTotalPendingTccs);
 
   const { data, isLoading } = useQuery({
     queryKey: ["tccs", { page }],
     queryFn: () => listTccs({ page }),
   });
+
+  const tccIds = useMemo(
+    () => (data?.content ?? []).map((tcc) => tcc.id),
+    [data?.content],
+  );
+
+  const { data: cronogramaResumos } = useQuery({
+    queryKey: ["tccs", "cronograma-resumos", tccIds],
+    queryFn: () => getCronogramaResumos(tccIds),
+    enabled: tccIds.length > 0,
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (tccIds.length === 0) {
+      setNotificationCounts({});
+    }
+  }, [tccIds, setNotificationCounts]);
+
+  useEffect(() => {
+    if (cronogramaResumos) {
+      const counts: Record<string, number> = {};
+      Object.entries(cronogramaResumos).forEach(([id, resumo]) => {
+        counts[id] = resumo?.pendentes ?? 0;
+      });
+      setNotificationCounts(counts);
+    }
+  }, [cronogramaResumos, setNotificationCounts]);
+
+  // Prefetch pages when TCCs are loaded
+  useEffect(() => {
+    if (data?.content) {
+      // Prefetch new TCC page
+      router.prefetch("/tccs/new");
+      // Prefetch all TCC detail pages
+      data.content.forEach((tcc) => {
+        router.prefetch(`/tccs/${tcc.id}`);
+        router.prefetch(`/tccs/${tcc.id}/workspace`);
+      });
+    }
+  }, [data?.content, router]);
 
   const { mutate: remove } = useMutation({
     mutationFn: (id: string) => removeTcc(id),
@@ -42,9 +89,16 @@ export default function TccsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
         <h1 className="text-2xl font-bold">TCCs</h1>
+          {totalPendingNotifications > 0 && (
+            <Badge variant="warning" className="text-xs font-semibold">
+              {totalPendingNotifications} pendências
+            </Badge>
+          )}
+        </div>
         {user?.papel === PapelUsuario.ALUNO && (
-          <Link href="/tccs/new">
+          <Link href="/tccs/new" prefetch={true}>
             <Button className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm">
               Novo TCC
             </Button>

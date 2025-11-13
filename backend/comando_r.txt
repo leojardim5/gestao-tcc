@@ -1,0 +1,61 @@
+Carregar dados
+dados <- read.csv("COVID_bairro.csv", header = TRUE)
+
+Ver total real de positivos
+sum(dados$n_positivo)
+
+1) Amostra Aleatória Simples (n = 9)
+set.seed(1)
+amostra_aleatoria <- sample(dados$Casa, 9, replace = FALSE)
+subset(dados, Casa %in% amostra_aleatoria)
+sum(subset(dados, Casa %in% amostra_aleatoria)$n_positivo)
+
+2) Amostra Sistemática (n = 9)
+N <- nrow(dados)
+n <- 9
+k <- N/n
+inicio <- 3              
+amostra_sistematica <- seq(inicio, N, by = k)
+subset(dados, Casa %in% amostra_sistematica)
+sum(subset(dados, Casa %in% amostra_sistematica)$n_positivo)
+
+
+3) Amostra Estratificada Proporcional
+A <- subset(dados, Estrato == "A")
+B <- subset(dados, Estrato == "B")
+
+nA <- round(9 * (nrow(A)/nrow(dados)))
+nB <- 9 - nA
+
+set.seed(1)
+amostra_A <- sample(A$Casa, nA)
+amostra_B <- sample(B$Casa, nB)
+
+amostra_estratificada <- c(amostra_A, amostra_B)
+subset(dados, Casa %in% amostra_estratificada)
+sum(subset(dados, Casa %in% amostra_estratificada)$n_positivo)
+
+Amostragem em Conglomerados (2 estágios)
+quarteirão = conglomerado
+Selecionar 3 quarteirões primeiro:
+
+set.seed(1)
+quarteiroes_sel <- sample(unique(dados$Quarteirao), 3)
+
+Dentro de cada quarteirão sortear 3 casas
+amostra_conglomerados <- c()
+
+for(q in quarteiroes_sel){
+  casas_q <- subset(dados, Quarteirao == q)$Casa
+  amostra_conglomerados <- c(amostra_conglomerados, sample(casas_q, 3))
+}
+
+subset(dados, Casa %in% amostra_conglomerados)
+sum(subset(dados, Casa %in% amostra_conglomerados)$n_positivo)
+
+
+Estimativa do total populacional (fator de expansão = 90/9 = 10)
+Exemplo para amostra aleatória simples:
+
+total_est_aleatoria <- sum(subset(dados, Casa %in% amostra_aleatoria)$n_positivo) * 10
+total_est_aleatoria

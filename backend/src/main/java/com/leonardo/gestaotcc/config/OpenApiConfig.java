@@ -13,7 +13,7 @@ public class OpenApiConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Gestão de TCC API")
+                        .title("Siga-TCC API")
                         .version("v0.1")
                         .description("API para o Sistema de Gestão de Trabalhos de Conclusão de Curso.")
                         .termsOfService("http://swagger.io/terms/")

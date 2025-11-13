@@ -1,6 +1,7 @@
 package com.leonardo.gestaotcc.service;
 
 import com.leonardo.gestaotcc.dto.TccDto;
+import com.leonardo.gestaotcc.dto.workspace.TccWorkspaceDto;
 import com.leonardo.gestaotcc.entity.Tcc;
 import com.leonardo.gestaotcc.entity.Usuario;
 import com.leonardo.gestaotcc.enums.PapelUsuario;
@@ -10,17 +11,24 @@ import com.leonardo.gestaotcc.exception.ResourceNotFoundException;
 import com.leonardo.gestaotcc.mapper.TccMapper;
 import com.leonardo.gestaotcc.repository.TccRepository;
 import com.leonardo.gestaotcc.repository.UsuarioRepository;
+import com.leonardo.gestaotcc.security.CustomUserDetails;
+import com.leonardo.gestaotcc.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TccServiceImpl implements TccService {
@@ -29,6 +37,7 @@ public class TccServiceImpl implements TccService {
     private final UsuarioRepository usuarioRepository;
     private final TccMapper tccMapper;
     private final JdbcTemplate jdbcTemplate;
+    private final GoogleDocsService googleDocsService;
 
     @Override
     @Transactional
@@ -154,25 +163,7 @@ public class TccServiceImpl implements TccService {
         Tcc tcc = tccRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + id));
         
-        // Verificar se o usuário tem permissão para ver este TCC
-        if (authenticatedUserId != null && authenticatedUserRole != null) {
-            boolean hasPermission = false;
-            
-            if (authenticatedUserRole == PapelUsuario.ALUNO) {
-                // Aluno pode ver apenas seus próprios TCCs
-                hasPermission = tcc.getAluno().getId().equals(authenticatedUserId);
-            } else if (authenticatedUserRole == PapelUsuario.ORIENTADOR) {
-                // Orientador pode ver TCCs onde ele é orientador
-                hasPermission = tcc.getOrientador() != null && tcc.getOrientador().getId().equals(authenticatedUserId);
-            } else if (authenticatedUserRole == PapelUsuario.COORDENADOR) {
-                // Coordenador pode ver todos os TCCs
-                hasPermission = true;
-            }
-            
-            if (!hasPermission) {
-                throw new ResourceNotFoundException("TCC não encontrado com ID: " + id);
-            }
-        }
+        verificarPermissaoVisualizacao(tcc, authenticatedUserId, authenticatedUserRole);
         
         return tccMapper.toResponse(tcc);
     }
@@ -259,5 +250,174 @@ public class TccServiceImpl implements TccService {
         
         // Finalmente deletar o TCC
         tccRepository.delete(tcc);
+    }
+
+    @Override
+    @Transactional
+    public TccWorkspaceDto.Overview getWorkspaceOverview(UUID id) {
+        Tcc tcc = tccRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + id));
+
+        CustomUserDetails currentUser = SecurityUtils.getCurrentUserDetails()
+                .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado"));
+
+        verificarPermissaoVisualizacao(tcc, currentUser.getId(), currentUser.getPapel());
+        
+        // Tentar criar documento se elegível (apenas orientador/coordenador podem criar)
+        tentarCriarDocumentoSeElegivel(tcc, currentUser);
+        
+        // Forçar flush e clear do entity manager para garantir que mudanças sejam persistidas
+        tccRepository.flush();
+        
+        // Recarregar o TCC do banco para garantir que temos os dados mais recentes (incluindo documento criado)
+        tccRepository.clear();
+        tcc = tccRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + id));
+
+        log.info("[TccService] getWorkspaceOverview para TCC {} - Usuário: {} ({}). Documento: fileId={}, webViewLink={}", 
+                id, currentUser.getEmail(), currentUser.getPapel(), 
+                tcc.getGoogleFileId(), tcc.getGoogleWebViewLink());
+
+        return toOverview(tcc);
+    }
+
+    private TccWorkspaceDto.OrientadorInfo toOrientadorInfo(Usuario usuario) {
+        if (usuario == null) {
+            return null;
+        }
+        return TccWorkspaceDto.OrientadorInfo.builder()
+                .id(usuario.getId())
+                .nome(usuario.getNome())
+                .email(usuario.getEmail())
+                .build();
+    }
+
+    private void verificarPermissaoVisualizacao(Tcc tcc, UUID authenticatedUserId, PapelUsuario authenticatedUserRole) {
+        if (authenticatedUserId == null || authenticatedUserRole == null) {
+            // Sem usuário autenticado não permitimos acesso em produção
+            throw new ResourceNotFoundException("TCC não encontrado");
+        }
+
+        boolean hasPermission = switch (authenticatedUserRole) {
+            case ALUNO -> tcc.getAluno() != null && tcc.getAluno().getId().equals(authenticatedUserId);
+            case ORIENTADOR -> (tcc.getOrientador() != null && tcc.getOrientador().getId().equals(authenticatedUserId))
+                    || (tcc.getCoorientador() != null && tcc.getCoorientador().getId().equals(authenticatedUserId));
+            case COORDENADOR -> true;
+        };
+
+        if (!hasPermission) {
+            throw new ResourceNotFoundException("TCC não encontrado com ID: " + tcc.getId());
+        }
+    }
+
+    @Override
+    @Transactional
+    public TccWorkspaceDto.Overview ensureGoogleDocument(UUID tccId) {
+        Tcc tcc = tccRepository.findById(tccId)
+                .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + tccId));
+
+        CustomUserDetails currentUser = SecurityUtils.getCurrentUserDetails()
+                .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado"));
+
+        if (!usuarioPodeGerarDocumento(currentUser, tcc)) {
+            throw new ResourceNotFoundException("TCC não encontrado com ID: " + tcc.getId());
+        }
+
+        if (tcc.getGoogleFileId() == null) {
+            googleDocsService.criarDocumentoParaTcc(tcc)
+                    .ifPresent(metadata -> {
+                        tcc.setGoogleFileId(metadata.fileId());
+                        tcc.setGoogleWebViewLink(metadata.webViewLink());
+                        tcc.setGoogleWebEditLink(metadata.webEditLink());
+                        tcc.setGoogleDocCriadoEm(java.time.LocalDateTime.now());
+                        tccRepository.save(tcc);
+                    });
+        }
+
+        return toOverview(tcc);
+    }
+
+    private void tentarCriarDocumentoSeElegivel(Tcc tcc, CustomUserDetails currentUser) {
+        if (tcc.getGoogleFileId() != null) {
+            return;
+        }
+        if (!usuarioPodeGerarDocumento(currentUser, tcc)) {
+            return;
+        }
+
+        googleDocsService.criarDocumentoParaTcc(tcc)
+                .ifPresent(metadata -> {
+                    tcc.setGoogleFileId(metadata.fileId());
+                    tcc.setGoogleWebViewLink(metadata.webViewLink());
+                    tcc.setGoogleWebEditLink(metadata.webEditLink());
+                    tcc.setGoogleDocCriadoEm(java.time.LocalDateTime.now());
+                    tccRepository.save(tcc);
+                });
+    }
+
+    private boolean usuarioPodeGerarDocumento(CustomUserDetails user, Tcc tcc) {
+        if (user.getPapel() == PapelUsuario.COORDENADOR) {
+            return true;
+        }
+
+        UUID userId = user.getId();
+        return (tcc.getOrientador() != null && tcc.getOrientador().getId().equals(userId))
+                || (tcc.getCoorientador() != null && tcc.getCoorientador().getId().equals(userId));
+    }
+
+    private TccWorkspaceDto.Overview toOverview(Tcc tcc) {
+        TccWorkspaceDto.Overview overview = TccWorkspaceDto.Overview.builder()
+                .id(tcc.getId())
+                .titulo(tcc.getTitulo())
+                .tema(tcc.getTema())
+                .curso(tcc.getCurso())
+                .status(tcc.getStatus())
+                .dataInicio(tcc.getDataInicio())
+                .dataEntregaPrevista(tcc.getDataEntregaPrevista())
+                .aluno(TccWorkspaceDto.AlunoInfo.builder()
+                        .id(tcc.getAluno() != null ? tcc.getAluno().getId() : null)
+                        .nome(tcc.getAluno() != null ? tcc.getAluno().getNome() : null)
+                        .email(tcc.getAluno() != null ? tcc.getAluno().getEmail() : null)
+                        .build())
+                .orientador(toOrientadorInfo(tcc.getOrientador()))
+                .coorientador(toOrientadorInfo(tcc.getCoorientador()))
+                .googleFileId(tcc.getGoogleFileId())
+                .googleWebViewLink(tcc.getGoogleWebViewLink())
+                .googleWebEditLink(tcc.getGoogleWebEditLink())
+                .googleDocCriadoEm(tcc.getGoogleDocCriadoEm())
+                .criadoEm(tcc.getCriadoEm())
+                .atualizadoEm(tcc.getAtualizadoEm())
+                .build();
+        
+        log.debug("[TccService] Retornando overview para TCC {}. Documento Google: fileId={}, webViewLink={}", 
+                tcc.getId(), overview.getGoogleFileId(), overview.getGoogleWebViewLink());
+        
+        return overview;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TccWorkspaceDto.DocComment> listGoogleDocComments(UUID tccId) {
+        Tcc tcc = tccRepository.findById(tccId)
+                .orElseThrow(() -> new ResourceNotFoundException("TCC não encontrado com ID: " + tccId));
+
+        SecurityUtils.getCurrentUserDetails().ifPresent(userDetails ->
+                verificarPermissaoVisualizacao(tcc, userDetails.getId(), userDetails.getPapel()));
+
+        if (!StringUtils.hasText(tcc.getGoogleFileId())) {
+            return List.of();
+        }
+
+        return googleDocsService.listarComentarios(tcc.getGoogleFileId()).stream()
+                .map(comment -> TccWorkspaceDto.DocComment.builder()
+                        .id(comment.id())
+                        .authorName(comment.authorName())
+                        .authorPhotoUrl(comment.authorPhotoUrl())
+                        .content(comment.content())
+                        .resolved(comment.resolved())
+                        .createdAt(comment.createdAt())
+                        .updatedAt(comment.updatedAt())
+                        .build())
+                .toList();
     }
 }
