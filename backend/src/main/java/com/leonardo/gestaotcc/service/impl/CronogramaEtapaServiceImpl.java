@@ -13,6 +13,7 @@ import com.leonardo.gestaotcc.exception.ResourceNotFoundException;
 import com.leonardo.gestaotcc.mapper.CronogramaEtapaMapper;
 import com.leonardo.gestaotcc.repository.CronogramaEtapaRepository;
 import com.leonardo.gestaotcc.repository.TccRepository;
+import com.leonardo.gestaotcc.repository.UsuarioRepository;
 import com.leonardo.gestaotcc.security.SecurityUtils;
 import com.leonardo.gestaotcc.service.CronogramaEtapaService;
 import com.leonardo.gestaotcc.service.NotificacaoService;
@@ -36,6 +37,7 @@ public class CronogramaEtapaServiceImpl implements CronogramaEtapaService {
     private final TccRepository tccRepository;
     private final CronogramaEtapaMapper mapper;
     private final NotificacaoService notificacaoService;
+    private final UsuarioRepository usuarioRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -64,7 +66,8 @@ public class CronogramaEtapaServiceImpl implements CronogramaEtapaService {
     public CronogramaEtapaDto.EtapaResponse atualizarStatus(UUID tccId, UUID etapaId, StatusCronogramaEtapa novoStatus, String observacao) {
         CronogramaEtapa etapa = buscarEtapaDoTcc(tccId, etapaId);
         Usuario usuario = SecurityUtils.getCurrentUserDetails()
-                .orElseThrow(() -> new ResourceNotFoundException("Etapa não encontrada"));
+                .flatMap(details -> usuarioRepository.findById(details.getId()))
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário autenticado não encontrado"));
 
         validarTransicao(etapa, novoStatus, observacao, usuario);
 
@@ -280,5 +283,14 @@ public class CronogramaEtapaServiceImpl implements CronogramaEtapaService {
                     String.format("O orientador %s solicitou ajustes na etapa '%s'.", tcc.getOrientador().getNome(), etapa.getNome())
             );
         }
+    }
+
+    @Override
+    @Transactional
+    public void deletarEtapa(UUID tccId, UUID etapaId) {
+        CronogramaEtapa etapa = buscarEtapaDoTcc(tccId, etapaId);
+        Tcc tcc = etapa.getTcc();
+        garantirAcessoOrientadorOuCoordenador(tcc);
+        cronogramaEtapaRepository.delete(etapa);
     }
 }

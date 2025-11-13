@@ -54,5 +54,19 @@ public class TccWorkspaceDto {
         private String nome;
         private String email;
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DocComment {
+        private String id;
+        private String authorName;
+        private String authorPhotoUrl;
+        private String content;
+        private boolean resolved;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+    }
 }
 

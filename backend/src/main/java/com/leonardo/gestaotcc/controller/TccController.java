@@ -226,6 +226,20 @@ public class TccController {
         return ResponseEntity.ok(overview);
     }
 
+    @PostMapping("/{id}/workspace/document")
+    @Operation(summary = "Garante que o documento do TCC exista e retorna o overview atualizado")
+    public ResponseEntity<TccWorkspaceDto.Overview> ensureWorkspaceDocument(@PathVariable UUID id) {
+        TccWorkspaceDto.Overview overview = tccService.ensureGoogleDocument(id);
+        return ResponseEntity.ok(overview);
+    }
+
+    @GetMapping("/{id}/workspace/document/comments")
+    @Operation(summary = "Lista comentários do documento principal do TCC no Google Docs")
+    public ResponseEntity<List<TccWorkspaceDto.DocComment>> listWorkspaceDocumentComments(@PathVariable UUID id) {
+        List<TccWorkspaceDto.DocComment> comments = tccService.listGoogleDocComments(id);
+        return ResponseEntity.ok(comments);
+    }
+
     @GetMapping("/cronograma/resumos")
     @Operation(summary = "Retorna resumos de cronogramas para múltiplos TCCs")
     public ResponseEntity<Map<UUID, CronogramaResumoDto>> getCronogramaResumos(

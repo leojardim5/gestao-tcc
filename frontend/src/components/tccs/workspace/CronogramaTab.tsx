@@ -29,36 +29,25 @@ import {
   createCronogramaEtapa,
   listCronogramaEtapas,
   updateCronogramaEtapaStatus,
+  deleteCronogramaEtapa,
 } from "@/services/cronograma";
 import { formatDate, formatDateTime } from "@/utils/date";
 import { handleApiError } from "@/services/api";
 import { useToast } from "@/hooks/useToast";
 import { ObservationDialog } from "./ObservationDialog";
 import { cn } from "@/lib/utils";
-import { GripVertical, Info, Plus } from "lucide-react";
+import { GripVertical, Info, Plus, Trash2 } from "lucide-react";
 import { useTccNotificationsStore } from "@/store/tccNotifications";
 import { differenceInCalendarDays, isAfter, parseISO } from "date-fns";
 
-const etapaSchema = z
-  .object({
-    nome: z.string().min(3, "Informe um nome com pelo menos 3 caracteres."),
-    dataInicio: z.string().min(1, "Informe a data de início."),
-    dataFim: z.string().min(1, "Informe a data de término."),
-    observacao: z
-      .string()
-      .max(2000, "Observação deve ter até 2000 caracteres.")
-      .optional(),
-  })
-  .refine(
-    (data) => {
-      if (!data.dataInicio || !data.dataFim) return true;
-      return new Date(data.dataFim) >= new Date(data.dataInicio);
-    },
-    {
-      message: "Data de término deve ser igual ou posterior à data de início.",
-      path: ["dataFim"],
-    },
-  );
+const etapaSchema = z.object({
+  nome: z.string().min(3, "Informe um nome com pelo menos 3 caracteres."),
+  dataFim: z.string().min(1, "Informe a data de término."),
+  observacao: z
+    .string()
+    .max(2000, "Observação deve ter até 2000 caracteres.")
+    .optional(),
+});
 
 type EtapaFormValues = z.infer<typeof etapaSchema>;
 type KanbanColumnId = "todo" | "doing" | "done";
@@ -165,25 +154,25 @@ const KanbanColumn = ({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex h-full min-h-[360px] flex-col rounded-lg border border-border bg-muted/30 p-4 transition-colors",
+        "flex h-full min-h-[280px] max-h-[calc(100vh-280px)] flex-col rounded-lg border border-slate-300 bg-slate-200 p-3 transition-colors",
         isOver && "border-primary bg-primary/10",
       )}
     >
-      <header className="mb-4 flex items-start justify-between gap-2">
+      <header className="mb-3 flex items-start justify-between gap-2">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide">
+          <h3 className="text-xs font-semibold uppercase tracking-wide">
             {title}
           </h3>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
+          <p className="text-[11px] text-muted-foreground">{subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           {extraAction}
-          <span className="inline-flex h-6 min-w-[2rem] items-center justify-center rounded-full bg-foreground/10 px-2 text-xs font-semibold text-foreground">
+          <span className="inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full bg-foreground/10 px-1.5 text-[11px] font-semibold text-foreground">
             {itemCount}
           </span>
         </div>
       </header>
-      <div className="flex-1 space-y-3">{children}</div>
+      <div className="flex-1 space-y-2 overflow-y-auto pr-2">{children}</div>
     </div>
   );
 };
@@ -195,6 +184,7 @@ const KanbanCard = ({
   onStart,
   onDeliver,
   onRequestChanges,
+  onDelete,
   isProcessing,
 }: {
   etapa: CronogramaEtapa;
@@ -203,6 +193,7 @@ const KanbanCard = ({
   onStart?: () => void;
   onDeliver?: () => void;
   onRequestChanges?: () => void;
+  onDelete?: () => void;
   isProcessing: boolean;
 }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -230,12 +221,12 @@ const KanbanCard = ({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group relative flex flex-col gap-2 rounded-lg border border-border bg-background p-3 shadow-sm transition-transform",
+        "group relative flex flex-col gap-2 rounded-lg border border-slate-300 bg-slate-200 p-3 shadow-sm transition-transform",
         isProcessing && "opacity-75",
       )}
     >
       {isProcessing && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/70">
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-slate-200/90 backdrop-blur-sm">
           <Spinner className="h-5 w-5 text-primary" />
         </div>
       )}
@@ -276,8 +267,8 @@ const KanbanCard = ({
           </div>
           <div className="space-y-0.5 text-xs text-muted-foreground">
             <p>
-              <span className="font-semibold text-foreground">Período:</span>{" "}
-              {formatDate(etapa.dataInicio)} &rarr; {formatDate(etapa.dataFim)}
+              <span className="font-semibold text-foreground">Prazo:</span>{" "}
+              {formatDate(etapa.dataFim)}
             </p>
             {etapa.concluidoEm && (
               <p>
@@ -286,8 +277,8 @@ const KanbanCard = ({
               </p>
             )}
             <p>
-              <span className="font-semibold text-foreground">Atualizado:</span>{" "}
-              {formatDateTime(etapa.atualizadoEm)}
+              <span className="font-semibold text-foreground">Criada em:</span>{" "}
+              {formatDateTime(etapa.criadoEm)}
             </p>
           </div>
           {etapa.observacao && (
@@ -325,6 +316,17 @@ const KanbanCard = ({
                 disabled={isProcessing}
               >
                 Solicitar ajustes
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onDelete}
+                disabled={isProcessing}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -405,7 +407,6 @@ export const CronogramaTab = ({ tccId, userRole }: CronogramaTabProps) => {
     resolver: zodResolver(etapaSchema),
     defaultValues: {
       nome: "",
-      dataInicio: "",
       dataFim: "",
       observacao: "",
     },
@@ -420,7 +421,7 @@ export const CronogramaTab = ({ tccId, userRole }: CronogramaTabProps) => {
     queryClient.invalidateQueries({ queryKey: ["tccs", tccId, "cronograma"] });
   };
 
-  const { mutate: createEtapa, isLoading: isCreating } = useMutation({
+  const { mutate: createEtapa, isPending: isCreating } = useMutation({
     mutationFn: (payload: CronogramaEtapaCreateRequest) =>
       createCronogramaEtapa(tccId, payload),
     onSuccess: () => {
@@ -450,6 +451,15 @@ export const CronogramaTab = ({ tccId, userRole }: CronogramaTabProps) => {
     onSettled: resetActionState,
   });
 
+  const { mutate: deleteEtapaMutate } = useMutation({
+    mutationFn: (etapaId: string) => deleteCronogramaEtapa(tccId, etapaId),
+    onSuccess: () => {
+      showToast("Etapa deletada com sucesso.", "success");
+      invalidateCronograma();
+    },
+    onError: handleMutationError,
+  });
+
   const groupedEtapas = useMemo(() => {
     const buckets: Record<KanbanColumnId, CronogramaEtapa[]> = {
       todo: [],
@@ -465,7 +475,7 @@ export const CronogramaTab = ({ tccId, userRole }: CronogramaTabProps) => {
     (Object.keys(buckets) as KanbanColumnId[]).forEach((column) => {
       buckets[column].sort(
         (a, b) =>
-          new Date(a.dataInicio).getTime() - new Date(b.dataInicio).getTime(),
+          new Date(a.criadoEm).getTime() - new Date(b.criadoEm).getTime(),
       );
     });
 
@@ -483,7 +493,7 @@ export const CronogramaTab = ({ tccId, userRole }: CronogramaTabProps) => {
   const onSubmit = (values: EtapaFormValues) => {
     const payload: CronogramaEtapaCreateRequest = {
       nome: values.nome.trim(),
-      dataInicio: values.dataInicio,
+      dataInicio: new Date().toISOString().split("T")[0], // Data atual como data de início
       dataFim: values.dataFim,
       observacao: values.observacao?.trim() || undefined,
     };
@@ -697,23 +707,23 @@ export const CronogramaTab = ({ tccId, userRole }: CronogramaTabProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Trilha de Progresso</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-lg font-semibold">Trilha de Progresso</h2>
+          <p className="text-xs text-muted-foreground">
             Organize o fluxo do TCC movendo cada etapa por A Fazer, Fazendo e Concluído. Alunos avançam as entregas; orientadores podem reordenar quando necessário.
           </p>
         </div>
       </div>
 
       {isLoading || isFetching ? (
-        <div className="flex justify-center py-12">
-          <Spinner className="h-8 w-8 text-muted-foreground" />
+        <div className="flex justify-center py-8">
+          <Spinner className="h-6 w-6 text-muted-foreground" />
         </div>
       ) : (
         <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-3">
             {COLUMN_CONFIG.map((column) => {
               const items = groupedEtapas[column.id];
               const extraAction =
@@ -740,7 +750,7 @@ export const CronogramaTab = ({ tccId, userRole }: CronogramaTabProps) => {
                   extraAction={extraAction}
                 >
                   {items.length === 0 ? (
-                    <div className="rounded-md border border-dashed border-muted-foreground/30 bg-muted/10 p-6 text-center text-xs text-muted-foreground">
+                    <div className="rounded-md border border-dashed border-muted-foreground/30 bg-muted/10 p-4 text-center text-[11px] text-muted-foreground">
                       {column.emptyState}
                     </div>
                   ) : (
@@ -765,6 +775,10 @@ export const CronogramaTab = ({ tccId, userRole }: CronogramaTabProps) => {
                           userRole === PapelUsuario.COORDENADOR) &&
                         columnId === "done";
 
+                      const allowDelete =
+                        userRole === PapelUsuario.ORIENTADOR ||
+                        userRole === PapelUsuario.COORDENADOR;
+
                       return (
                         <KanbanCard
                           key={etapa.id}
@@ -780,6 +794,15 @@ export const CronogramaTab = ({ tccId, userRole }: CronogramaTabProps) => {
                           onRequestChanges={
                             allowRequestChanges
                               ? () => handleSolicitarAjustesClick(etapa)
+                              : undefined
+                          }
+                          onDelete={
+                            allowDelete
+                              ? () => {
+                                  if (confirm(`Tem certeza que deseja deletar a etapa "${etapa.nome}"? Esta ação não pode ser desfeita.`)) {
+                                    deleteEtapaMutate(etapa.id);
+                                  }
+                                }
                               : undefined
                           }
                           isProcessing={isProcessing || activeCardId === etapa.id}
@@ -818,25 +841,14 @@ export const CronogramaTab = ({ tccId, userRole }: CronogramaTabProps) => {
                 )}
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="dataInicio">Data de início</Label>
-                  <Input id="dataInicio" type="date" {...form.register("dataInicio")} />
-                  {form.formState.errors.dataInicio && (
-                    <p className="text-sm font-medium text-destructive">
-                      {form.formState.errors.dataInicio.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dataFim">Data de término</Label>
-                  <Input id="dataFim" type="date" {...form.register("dataFim")} />
-                  {form.formState.errors.dataFim && (
-                    <p className="text-sm font-medium text-destructive">
-                      {form.formState.errors.dataFim.message}
-                    </p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="dataFim">Data de término</Label>
+                <Input id="dataFim" type="date" {...form.register("dataFim")} />
+                {form.formState.errors.dataFim && (
+                  <p className="text-sm font-medium text-destructive">
+                    {form.formState.errors.dataFim.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">

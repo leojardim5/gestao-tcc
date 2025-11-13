@@ -9,6 +9,8 @@ import { MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/DropdownMenu";
 import Link from "next/link";
 import { useTccNotificationsStore, selectPendingCountForTcc } from "@/store/tccNotifications";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 interface TccTableProps {
   tccs: Tcc[];
@@ -25,6 +27,15 @@ const statusVariant: { [key in StatusTcc]: "default" | "secondary" | "destructiv
 };
 
 export function TccTable({ tccs, onEdit, onDelete }: TccTableProps) {
+  const router = useRouter();
+
+  // Prefetch all workspace pages when TCCs are loaded
+  useEffect(() => {
+    tccs.forEach((tcc) => {
+      router.prefetch(`/tccs/${tcc.id}/workspace`);
+    });
+  }, [tccs, router]);
+
   return (
     <Table>
       <TableHeader>
@@ -38,14 +49,20 @@ export function TccTable({ tccs, onEdit, onDelete }: TccTableProps) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {tccs.map((tcc) => (
-          <TableRow key={tcc.id}>
-            <TableCell className="font-medium">
-              <Link href={`/tccs/${tcc.id}/workspace`} className="hover:underline">
-                {tcc.titulo}
-              </Link>
-              <TccNotificationBadge tccId={tcc.id} />
-            </TableCell>
+        {tccs.map((tcc) => {
+          const workspaceUrl = `/tccs/${tcc.id}/workspace`;
+          return (
+            <TableRow key={tcc.id}>
+              <TableCell className="font-medium">
+                <Link 
+                  href={workspaceUrl} 
+                  prefetch={true}
+                  className="hover:underline"
+                >
+                  {tcc.titulo}
+                </Link>
+                <TccNotificationBadge tccId={tcc.id} />
+              </TableCell>
             <TableCell>{tcc.alunoNome || 'N/A'}</TableCell>
             <TableCell>{tcc.orientadorNome || 'N/A'}</TableCell>
             <TableCell>
@@ -68,7 +85,12 @@ export function TccTable({ tccs, onEdit, onDelete }: TccTableProps) {
                   <DropdownMenuLabel>Ações</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => onEdit(tcc)}>Editar</DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href={`/tccs/${tcc.id}/workspace`}>Abrir Workspace</Link>
+                    <Link 
+                      href={workspaceUrl}
+                      prefetch={true}
+                    >
+                      Abrir Workspace
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => onDelete(tcc.id)} className="text-red-600">
@@ -78,7 +100,8 @@ export function TccTable({ tccs, onEdit, onDelete }: TccTableProps) {
               </DropdownMenu>
             </TableCell>
           </TableRow>
-        ))}
+          );
+        })}
       </TableBody>
     </Table>
   );

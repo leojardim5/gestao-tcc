@@ -2,15 +2,16 @@
 
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
-import { Spinner } from "@/components/ui/Spinner";
-import { CronogramaTab } from "@/components/tccs/workspace/CronogramaTab";
-import { WorkspaceHeader } from "@/components/tccs/workspace/WorkspaceHeader";
 import { getTccWorkspaceOverview } from "@/services/tccs";
 import { useToast } from "@/hooks/useToast";
 import { handleApiError } from "@/services/api";
 import { useSessionStore } from "@/store/session";
 import { useTccNotificationsStore } from "@/store/tccNotifications";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import { Spinner } from "@/components/ui/Spinner";
+import { CronogramaTab } from "@/components/tccs/workspace/CronogramaTab";
+import { WorkspaceHeader } from "@/components/tccs/workspace/WorkspaceHeader";
+import { DocumentTab } from "@/components/tccs/workspace/DocumentTab";
 
 interface TccWorkspacePageProps {
   params: { id: string };
@@ -69,36 +70,34 @@ export default function TccWorkspacePage({ params }: TccWorkspacePageProps) {
     <div className="space-y-6">
       <WorkspaceHeader overview={overview} />
 
-      <Tabs defaultValue="cronograma" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="cronograma">Cronograma</TabsTrigger>
-          <TabsTrigger value="versoes" disabled>
-            Versões
+      <Tabs defaultValue="trilha-progresso" className="w-full">
+        <TabsList className="mb-0">
+          <TabsTrigger value="trilha-progresso">
+            Trilha de Progresso
           </TabsTrigger>
-          <TabsTrigger value="feedbacks" disabled>
-            Feedbacks
+          <TabsTrigger value="documento">
+            Documento do TCC
           </TabsTrigger>
           <TabsTrigger value="mensagens" disabled>
             Mensagens
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="cronograma" className="mt-0">
-          <CronogramaTab tccId={overview.id} userRole={userRole} />
-        </TabsContent>
-        <TabsContent value="versoes">
-          <div className="rounded-md border border-dashed border-muted-foreground/40 px-6 py-12 text-center text-sm text-muted-foreground">
-            A aba de versões será liberada nas próximas sprints.
+        <TabsContent value="trilha-progresso" className="p-0">
+          <div className="rounded-b-lg border-x border-b border-border bg-background p-6 shadow-sm -mt-[1px]">
+            <CronogramaTab tccId={overview.id} userRole={userRole} />
           </div>
         </TabsContent>
-        <TabsContent value="feedbacks">
-          <div className="rounded-md border border-dashed border-muted-foreground/40 px-6 py-12 text-center text-sm text-muted-foreground">
-            Central de feedbacks em desenvolvimento.
+        <TabsContent value="documento" className="p-0">
+          <div className="rounded-b-lg border-x border-b border-border bg-background p-6 shadow-sm -mt-[1px]">
+            <DocumentTab tccId={overview.id} overview={overview} />
           </div>
         </TabsContent>
-        <TabsContent value="mensagens">
-          <div className="rounded-md border border-dashed border-muted-foreground/40 px-6 py-12 text-center text-sm text-muted-foreground">
-            Mensagens e interações serão implementadas futuramente.
+        <TabsContent value="mensagens" className="p-0">
+          <div className="rounded-b-lg border-x border-b border-border bg-background p-6 shadow-sm -mt-[1px]">
+            <div className="rounded-md border border-dashed border-muted-foreground/40 px-6 py-12 text-center text-sm text-muted-foreground">
+              Mensagens e interações serão implementadas futuramente.
+            </div>
           </div>
         </TabsContent>
       </Tabs>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createTcc } from "@/services/tccs";
 import { enviarConvite } from "@/services/convites";
 import { TccForm, TccFormInputs } from "@/components/tccs/TccForm";
@@ -18,6 +18,11 @@ export default function NewTccPage() {
   const router = useRouter();
   const { user } = useSessionStore();
   const [resetForm, setResetForm] = useState(false);
+
+  // Prefetch TCCs list page
+  useEffect(() => {
+    router.prefetch("/tccs");
+  }, [router]);
 
   const { mutate: create, isLoading: isCreating } = useMutation({
     mutationFn: (data: TccCreateRequest) => {

@@ -61,6 +61,19 @@ export default function TccsPage() {
     }
   }, [cronogramaResumos, setNotificationCounts]);
 
+  // Prefetch pages when TCCs are loaded
+  useEffect(() => {
+    if (data?.content) {
+      // Prefetch new TCC page
+      router.prefetch("/tccs/new");
+      // Prefetch all TCC detail pages
+      data.content.forEach((tcc) => {
+        router.prefetch(`/tccs/${tcc.id}`);
+        router.prefetch(`/tccs/${tcc.id}/workspace`);
+      });
+    }
+  }, [data?.content, router]);
+
   const { mutate: remove } = useMutation({
     mutationFn: (id: string) => removeTcc(id),
     onSuccess: () => {
@@ -77,7 +90,7 @@ export default function TccsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold">TCCs</h1>
+        <h1 className="text-2xl font-bold">TCCs</h1>
           {totalPendingNotifications > 0 && (
             <Badge variant="warning" className="text-xs font-semibold">
               {totalPendingNotifications} pendências
@@ -85,7 +98,7 @@ export default function TccsPage() {
           )}
         </div>
         {user?.papel === PapelUsuario.ALUNO && (
-          <Link href="/tccs/new">
+          <Link href="/tccs/new" prefetch={true}>
             <Button className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm">
               Novo TCC
             </Button>

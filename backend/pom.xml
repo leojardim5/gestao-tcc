@@ -125,7 +125,7 @@
         <dependency>
             <groupId>com.google.api-client</groupId>
             <artifactId>google-api-client</artifactId>
-            <version>2.5.0</version>
+            <version>1.25.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.auth</groupId>
@@ -134,13 +134,8 @@
         </dependency>
         <dependency>
             <groupId>com.google.apis</groupId>
-            <artifactId>google-api-services-docs</artifactId>
-            <version>v1-rev20240925-2.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-drive</artifactId>
-            <version>v3-rev20240926-2.0.0</version>
+            <version>v3-rev197-1.25.0</version>
         </dependency>
 
 
@@ -215,5 +210,13 @@
             </properties>
         </profile>
     </profiles>
+
+    <repositories>
+        <repository>
+            <id>google</id>
+            <name>Google Maven Repository</name>
+            <url>https://maven.google.com</url>
+        </repository>
+    </repositories>
 
 </project>

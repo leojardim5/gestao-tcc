@@ -21,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -155,13 +156,7 @@ public class ConviteOrientacaoService {
             return;
         }
 
-        String titulo = String.format("TCC - %s - %s", tcc.getAluno().getNome(), tcc.getTitulo());
-        List<String> editores = List.of(
-                tcc.getAluno().getEmail(),
-                tcc.getOrientador().getEmail()
-        );
-
-        googleDocsService.criarDocumento(titulo, editores)
+        googleDocsService.criarDocumentoParaTcc(tcc)
                 .ifPresent(metadata -> {
                     tcc.setGoogleFileId(metadata.fileId());
                     tcc.setGoogleWebViewLink(metadata.webViewLink());

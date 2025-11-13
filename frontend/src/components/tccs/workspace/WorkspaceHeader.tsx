@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { StatusTcc, TccWorkspaceOverview } from "@/interfaces";
-import { formatDate } from "@/utils/date";
+import { formatDate, formatDateTime } from "@/utils/date";
 import Link from "next/link";
 
 interface WorkspaceHeaderProps {
@@ -34,6 +34,8 @@ const InfoGroup = ({ title, children }: { title: string; children: React.ReactNo
 );
 
 export const WorkspaceHeader = ({ overview }: WorkspaceHeaderProps) => {
+  const hasGoogleDoc = Boolean(overview.googleFileId && overview.googleWebViewLink);
+
   return (
     <Card>
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -80,16 +82,21 @@ export const WorkspaceHeader = ({ overview }: WorkspaceHeaderProps) => {
           </InfoGroup>
         </div>
 
-        {overview.googleDocsVinculado && overview.googleWebViewLink && (
-          <div className="flex items-center justify-between gap-4 rounded-md border border-primary/40 bg-primary/5 px-4 py-3 text-sm">
-            <div className="text-primary">
-              Documento do TCC vinculado no Google Drive.
+        {hasGoogleDoc && overview.googleWebViewLink && (
+          <div className="flex flex-col gap-3 rounded-md border border-primary/40 bg-primary/5 px-4 py-3 text-sm text-primary sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-medium">Documento do TCC vinculado no Google Drive.</p>
+              {overview.googleDocCriadoEm && (
+                <p className="text-xs text-primary/80">
+                  Vinculado em {formatDateTime(overview.googleDocCriadoEm)}
+                </p>
+              )}
             </div>
             <Link
               href={overview.googleWebViewLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm font-medium text-primary underline hover:text-primary/80"
+              className="text-sm font-semibold underline underline-offset-2 hover:text-primary/80"
             >
               Abrir documento
             </Link>

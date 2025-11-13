@@ -169,6 +169,16 @@ export interface TccWorkspaceOverview {
     atualizadoEm: string;
 }
 
+export interface GoogleDocComment {
+    id: string;
+    authorName: string;
+    authorPhotoUrl?: string | null;
+    content: string;
+    resolved: boolean;
+    createdAt: string | null;
+    updatedAt: string | null;
+}
+
 export interface CronogramaEtapa {
     id: string;
     nome: string;

@@ -44,3 +44,7 @@ export const getCronogramaResumos = async (tccIds: string[]): Promise<Record<str
   return response.data ?? {};
 };
 
+export const deleteCronogramaEtapa = async (tccId: string, etapaId: string): Promise<void> => {
+  await api.delete(`/api/tccs/${tccId}/cronograma/etapas/${etapaId}`);
+};
+

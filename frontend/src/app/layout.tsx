@@ -7,7 +7,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Gestão de TCC",
+  title: "Siga-TCC",
   description: "Sistema para gestão de Trabalhos de Conclusão de Curso",
 };
 

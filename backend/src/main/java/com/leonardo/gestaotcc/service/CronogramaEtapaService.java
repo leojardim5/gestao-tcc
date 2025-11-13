@@ -2,6 +2,7 @@ package com.leonardo.gestaotcc.service;
 
 import com.leonardo.gestaotcc.dto.cronograma.CronogramaEtapaDto;
 import com.leonardo.gestaotcc.dto.cronograma.CronogramaResumoDto;
+import com.leonardo.gestaotcc.enums.StatusCronogramaEtapa;
 
 import java.util.List;
 import java.util.Map;
@@ -18,5 +19,7 @@ public interface CronogramaEtapaService {
     CronogramaResumoDto obterResumo(UUID tccId);
 
     Map<UUID, CronogramaResumoDto> obterResumos(List<UUID> tccIds);
+
+    void deletarEtapa(UUID tccId, UUID etapaId);
 }
 

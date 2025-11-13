@@ -61,5 +61,16 @@ public class CronogramaEtapaController {
     public ResponseEntity<CronogramaResumoDto> resumo(@PathVariable UUID tccId) {
         return ResponseEntity.ok(cronogramaEtapaService.obterResumo(tccId));
     }
+
+    @DeleteMapping("/etapas/{etapaId}")
+    @PreAuthorize("hasAnyRole('ORIENTADOR','COORDENADOR')")
+    @Operation(summary = "Deleta uma etapa do cronograma")
+    public ResponseEntity<Void> deletarEtapa(
+            @PathVariable UUID tccId,
+            @PathVariable UUID etapaId
+    ) {
+        cronogramaEtapaService.deletarEtapa(tccId, etapaId);
+        return ResponseEntity.noContent().build();
+    }
 }
 
