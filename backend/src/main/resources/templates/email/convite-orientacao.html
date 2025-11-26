@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${appName} + ' - Convite de Orientação'">Gestão TCC - Convite de Orientação</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 3px solid #4F46E5;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #4F46E5;
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .info-section {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 120px;
+            font-size: 14px;
+        }
+        .info-value {
+            color: #212529;
+            flex: 1;
+            font-size: 14px;
+        }
+        .message-box {
+            background-color: #e7f3ff;
+            border-left: 4px solid #4F46E5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .message-box p {
+            margin: 0;
+            font-size: 15px;
+            color: #495057;
+        }
+        .type-badge {
+            display: inline-block;
+            background-color: #4F46E5;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        .footer {
+            border-top: 1px solid #e9ecef;
+            padding-top: 20px;
+            margin-top: 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .highlight {
+            color: #4F46E5;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 th:text="${appName}">Gestão TCC</h1>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">
+                <p>Olá, <strong th:text="${usuarioNome}">Usuário</strong>!</p>
+            </div>
+            
+            <div class="type-badge">Convite de Orientação</div>
+            
+            <div class="message-box">
+                <p th:text="${mensagem}">Mensagem da notificação</p>
+            </div>
+
+            <div th:if="${temDadosExtras and dados != null}" class="info-section">
+                <h3 style="margin-top: 0; color: #4F46E5; font-size: 18px;">Detalhes do TCC</h3>
+                
+                <div class="info-row" th:if="${dados.tituloTcc}">
+                    <span class="info-label">Título:</span>
+                    <span class="info-value highlight" th:text="${dados.tituloTcc}">-</span>
+                </div>
+                
+                <div class="info-row" th:if="${dados.tema}">
+                    <span class="info-label">Tema:</span>
+                    <span class="info-value" th:text="${dados.tema}">-</span>
+                </div>
+                
+                <div class="info-row" th:if="${dados.curso}">
+                    <span class="info-label">Curso:</span>
+                    <span class="info-value" th:text="${dados.curso}">-</span>
+                </div>
+                
+                <div class="info-row" th:if="${dados.resumo}">
+                    <span class="info-label">Resumo:</span>
+                    <span class="info-value" th:text="${dados.resumo}">-</span>
+                </div>
+                
+                <div class="info-row" th:if="${dados.nomeAluno}">
+                    <span class="info-label">Aluno:</span>
+                    <span class="info-value" th:text="${dados.nomeAluno}">-</span>
+                </div>
+                
+                <div class="info-row" th:if="${dados.emailAluno}">
+                    <span class="info-label">Email do Aluno:</span>
+                    <span class="info-value" th:text="${dados.emailAluno}">-</span>
+                </div>
+                
+                <div class="info-row" th:if="${dados.status}">
+                    <span class="info-label">Status:</span>
+                    <span class="info-value" th:text="${dados.status}">-</span>
+                </div>
+                
+                <div class="info-row" th:if="${dados.mensagemPersonalizada}">
+                    <span class="info-label">Mensagem do Aluno:</span>
+                    <span class="info-value" style="font-style: italic;" th:text="${dados.mensagemPersonalizada}">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Esta é uma notificação automática do sistema <strong th:text="${appName}">Gestão TCC</strong>.</p>
+            <p>Acesse o sistema para responder ao convite.</p>
+            <p>Por favor, não responda este email.</p>
+        </div>
+    </div>
+</body>
+</html>
+

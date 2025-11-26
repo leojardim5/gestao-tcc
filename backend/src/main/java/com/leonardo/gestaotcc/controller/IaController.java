@@ -31,7 +31,43 @@ public class IaController {
     public ResponseEntity<AiSuggestionDto.SuggestionResponse> sugerirOrientadores(
             @Valid @RequestBody AiSuggestionDto.SuggestionRequest request
     ) {
-        return ResponseEntity.ok(iaSuggestionService.sugerirOrientadores(request));
+        System.out.println("🎯 ========== BACKEND: IaController.sugerirOrientadores CHAMADO ==========");
+        System.out.println("📦 Request recebido:");
+        System.out.println("  - Aluno ID: " + request.getAlunoId());
+        System.out.println("  - Aluno Nome: " + request.getAlunoNome());
+        System.out.println("  - Curso: " + request.getCurso());
+        System.out.println("  - Título: " + request.getTitulo());
+        System.out.println("  - Tema: " + request.getTema());
+        System.out.println("  - Resumo: " + request.getResumo());
+        System.out.println("  - Mensagem: " + request.getMensagem());
+        System.out.println("  - Palavras-chave: " + (request.getPalavrasChave() != null ? request.getPalavrasChave() : "null"));
+        System.out.println("⏰ Timestamp: " + java.time.LocalDateTime.now());
+        
+        try {
+            AiSuggestionDto.SuggestionResponse response = iaSuggestionService.sugerirOrientadores(request);
+            System.out.println("✅ BACKEND: Resposta gerada com sucesso!");
+            System.out.println("  - Modelo: " + response.getModelo());
+            System.out.println("  - Mensagem Sistema: " + response.getMensagemSistema());
+            System.out.println("  - Número de sugestões: " + (response.getSugestoes() != null ? response.getSugestoes().size() : 0));
+            if (response.getSugestoes() != null) {
+                response.getSugestoes().forEach((sug, idx) -> {
+                    System.out.println("    Sugestão " + (idx + 1) + ":");
+                    System.out.println("      - ID: " + sug.getOrientadorId());
+                    System.out.println("      - Nome: " + sug.getOrientadorNome());
+                    System.out.println("      - Score: " + sug.getScore());
+                    System.out.println("      - Justificativa: " + sug.getJustificativa());
+                });
+            }
+            System.out.println("🎯 ========== FIM BACKEND CONTROLLER ==========");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("❌ BACKEND: Erro no controller!");
+            System.err.println("🚨 Exceção: " + e.getClass().getName());
+            System.err.println("💬 Mensagem: " + e.getMessage());
+            e.printStackTrace();
+            System.err.println("🎯 ========== FIM ERRO CONTROLLER ==========");
+            throw e;
+        }
     }
 }
 

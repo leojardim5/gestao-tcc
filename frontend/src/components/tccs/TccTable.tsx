@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/utils/date";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, FileText } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/DropdownMenu";
 import Link from "next/link";
 import { useTccNotificationsStore, selectPendingCountForTcc } from "@/store/tccNotifications";
@@ -74,30 +74,62 @@ export function TccTable({ tccs, onEdit, onDelete }: TccTableProps) {
             </TableCell>
             <TableCell>{formatDate(tcc.dataInicio)}</TableCell>
             <TableCell>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
+              <div className="flex items-center gap-2">
+                {/* Ícone para abrir documento do Google Docs */}
+                {tcc.googleWebViewLink && (
+                  <Button
+                    variant="ghost"
+                    className="h-8 w-8 p-0"
+                    title="Abrir documento do Google Docs"
+                    onClick={() => {
+                      const docUrl = tcc.googleWebEditLink || tcc.googleWebViewLink;
+                      if (docUrl) {
+                        window.open(docUrl, '_blank', 'noopener,noreferrer');
+                      }
+                    }}
+                  >
+                    <span className="sr-only">Abrir documento</span>
+                    <FileText className="h-4 w-4 text-blue-600 hover:text-blue-700" />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => onEdit(tcc)}>Editar</DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link 
-                      href={workspaceUrl}
-                      prefetch={true}
-                    >
-                      Abrir Workspace
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onDelete(tcc.id)} className="text-red-600">
-                    Excluir
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                )}
+                {/* Menu de ações (3 pontos) */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <span className="sr-only">Open menu</span>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => onEdit(tcc)}>Editar</DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link 
+                        href={workspaceUrl}
+                        prefetch={true}
+                      >
+                        Abrir Workspace
+                      </Link>
+                    </DropdownMenuItem>
+                    {tcc.googleWebViewLink && (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          const docUrl = tcc.googleWebEditLink || tcc.googleWebViewLink;
+                          if (docUrl) {
+                            window.open(docUrl, '_blank', 'noopener,noreferrer');
+                          }
+                        }}
+                      >
+                        Abrir Documento
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => onDelete(tcc.id)} className="text-red-600">
+                      Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </TableCell>
           </TableRow>
           );

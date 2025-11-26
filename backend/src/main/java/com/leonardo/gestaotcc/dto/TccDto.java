@@ -67,6 +67,9 @@ public class TccDto {
         private String orientadorNome;
         private UUID coorientadorId;
         private String coorientadorNome;
+        private String googleFileId;
+        private String googleWebViewLink;
+        private String googleWebEditLink;
         private LocalDateTime criadoEm;
         private LocalDateTime atualizadoEm;
     }

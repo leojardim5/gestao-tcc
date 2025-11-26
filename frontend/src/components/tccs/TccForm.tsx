@@ -99,18 +99,38 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
   const { mutate: sugerirOrientadores, isPending: isLoadingIa } = useMutation({
     mutationFn: sugerirOrientadoresIa,
     onSuccess: (data) => {
+      console.log("✅ ========== SUCESSO na chamada da IA ==========");
+      console.log("📊 Dados recebidos:", data);
+      console.log("📝 Sugestões brutas:", data.sugestoes);
+      console.log("🤖 Modelo usado:", data.modelo);
+      console.log("💬 Mensagem do sistema:", data.mensagemSistema);
+      
       const orderedSugestoes = [...(data.sugestoes ?? [])].sort(
         (a, b) => (b.score ?? 0) - (a.score ?? 0)
       );
+      console.log("📊 Sugestões ordenadas:", orderedSugestoes);
+      
       setIaSuggestions(orderedSugestoes);
       setSelectOpen(true);
+      console.log("🎯 Select aberto:", true);
+      console.log("📋 Estado atualizado com", orderedSugestoes.length, "sugestões");
+      
       if (data.mensagemSistema) {
         showToast(data.mensagemSistema, "info");
       }
+      console.log("✅ ========== FIM SUCESSO ==========");
     },
     onError: (error: unknown) => {
+      console.error("❌ ========== ERRO na chamada da IA ==========");
+      console.error("🚨 Erro completo:", error);
+      console.error("📋 Tipo do erro:", typeof error);
+      console.error("📋 Erro stringificado:", JSON.stringify(error, null, 2));
+      
       const { message } = handleApiError(error);
+      console.error("💬 Mensagem de erro tratada:", message);
+      
       showToast(message || "Não foi possível obter sugestões da IA.", "error");
+      console.error("❌ ========== FIM ERRO ==========");
     },
   });
 
@@ -148,20 +168,34 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
     (isAluno ? Boolean(user?.id) : Boolean(alunoIdValue));
 
   const handleSolicitarSugestoes = () => {
+    console.log("🚀 ========== INÍCIO handleSolicitarSugestoes ==========");
     const values = getValues();
+    console.log("📋 Valores do formulário:", values);
+    console.log("👤 Usuário atual:", user);
+    console.log("🎓 É aluno?", isAluno);
+    
     const alunoIdSelecionado = isAluno ? user.id : values.alunoId;
+    console.log("🆔 Aluno ID selecionado:", alunoIdSelecionado);
 
     if (!alunoIdSelecionado) {
+      console.warn("⚠️ Aluno não selecionado!");
       showToast("Selecione um aluno antes de pedir sugestões.", "warning");
       return;
     }
 
     if (!values.titulo || !values.tema || !values.curso || !values.mensagemOrientador) {
+      console.warn("⚠️ Campos obrigatórios não preenchidos:", {
+        titulo: !!values.titulo,
+        tema: !!values.tema,
+        curso: !!values.curso,
+        mensagemOrientador: !!values.mensagemOrientador
+      });
       showToast("Preencha título, tema, curso e a mensagem/descrição para gerar sugestões.", "warning");
       return;
     }
 
     if (values.mensagemOrientador.trim().length < 10) {
+      console.warn("⚠️ Mensagem muito curta:", values.mensagemOrientador.trim().length);
       showToast("Escreva pelo menos 10 caracteres na mensagem/descrição antes de pedir sugestões da IA.", "warning");
       return;
     }
@@ -169,12 +203,14 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
     const alunoNome = isAluno
       ? user.nome
       : alunosData?.content?.find((aluno) => aluno.id === alunoIdSelecionado)?.nome ?? "Aluno";
+    console.log("👨‍🎓 Nome do aluno:", alunoNome);
 
     const palavrasChave = extrairPalavrasChave(
       [values.tema, values.curso, values.mensagemOrientador].filter(Boolean).join(" ")
     );
+    console.log("🔑 Palavras-chave extraídas:", palavrasChave);
 
-    sugerirOrientadores({
+    const payload = {
       alunoId: alunoIdSelecionado,
       alunoNome,
       curso: values.curso,
@@ -183,7 +219,12 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
       resumo: values.mensagemOrientador || values.tema,
       mensagem: values.mensagemOrientador,
       palavrasChave,
-    });
+    };
+    console.log("📦 Payload completo para IA:", payload);
+    console.log("🔄 Chamando sugerirOrientadores...");
+    
+    sugerirOrientadores(payload);
+    console.log("✅ ========== FIM handleSolicitarSugestoes ==========");
   };
 
   const sugestaoPorId = useMemo(() => {
@@ -335,20 +376,20 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
                       open={selectOpen}
                       onOpenChange={setSelectOpen}
                     >
-                        <SelectTrigger className="min-h-[52px] py-2">
+                        <SelectTrigger className="min-h-[52px] py-2 text-left">
                           {orientadorSelecionado ? (
-                            <span className="flex w-full items-center justify-between gap-3">
-                              <span className="flex min-w-0 flex-col text-left">
-                                <span className="truncate text-sm font-medium">{orientadorSelecionado.nome}</span>
+                            <div className="flex w-full items-center justify-between gap-3 min-w-0">
+                              <div className="flex min-w-0 flex-col text-left flex-1">
+                                <span className="text-sm font-medium break-words">{orientadorSelecionado.nome}</span>
                                 {sugestaoSelecionada?.justificativa && (
-                                  <span className="text-[11px] text-muted-foreground line-clamp-1">
+                                  <span className="text-[11px] text-muted-foreground line-clamp-1 break-words mt-0.5">
                                     {sugestaoSelecionada.justificativa}
                                   </span>
                                 )}
-                              </span>
+                              </div>
                               {sugestaoSelecionada?.score !== undefined && (
                                 <span
-                                  className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${getScoreBadgeStyles(sugestaoSelecionada.score)}`}
+                                  className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${getScoreBadgeStyles(sugestaoSelecionada.score)}`}
                                 >
                                   <span
                                     className={`h-2 w-2 rounded-full ${getScoreColor(sugestaoSelecionada.score).replace("text", "bg")}`}
@@ -356,7 +397,7 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
                                   {`${Math.round(sugestaoSelecionada.score)}%`}
                                 </span>
                               )}
-                            </span>
+                            </div>
                           ) : (
                             <SelectValue
                               placeholder={
@@ -367,7 +408,7 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
                             />
                           )}
                         </SelectTrigger>
-                        <SelectContent className="max-h-64 overflow-y-auto">
+                        <SelectContent className="max-h-64 overflow-y-auto min-w-[var(--radix-select-trigger-width)] max-w-[500px]">
                             {isLoadingOrientadores ? (
                                 <SelectItem value="loading" disabled>Carregando...</SelectItem>
                             ) : orientadoresError ? (
@@ -378,19 +419,23 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
                                 const sugestao = sugestaoPorId.get(orientador.id);
                                 const scoreTexto = sugestao ? `${Math.round(sugestao.score)}%` : undefined;
                                 return (
-                                    <SelectItem key={orientador.id} value={orientador.id}>
-                                        <span className="flex items-center justify-between gap-3">
-                                          <span className="flex flex-col text-left">
-                                            <span className="font-medium text-sm">{orientador.nome}</span>
+                                    <SelectItem 
+                                        key={orientador.id} 
+                                        value={orientador.id}
+                                        className="py-2.5"
+                                    >
+                                        <div className="flex items-start justify-between gap-3 w-full min-w-0">
+                                          <div className="flex flex-col text-left min-w-0 flex-1">
+                                            <span className="font-medium text-sm mb-1 break-words">{orientador.nome}</span>
                                             {sugestao?.justificativa && (
-                                              <span className="text-[11px] text-muted-foreground line-clamp-2">
+                                              <span className="text-[11px] text-muted-foreground break-words leading-relaxed">
                                                 {sugestao.justificativa}
                                               </span>
                                             )}
-                                          </span>
+                                          </div>
                                           {scoreTexto && (
                                             <span
-                                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${getScoreBadgeStyles(sugestao?.score)}`}
+                                              className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${getScoreBadgeStyles(sugestao?.score)}`}
                                             >
                                               <span
                                                 className={`h-2 w-2 rounded-full ${getScoreColor(sugestao?.score).replace("text", "bg")}`}
@@ -398,7 +443,7 @@ export function TccForm({ onSubmit, defaultValues, isSubmitting, onReset }: TccF
                                               {scoreTexto}
                                             </span>
                                           )}
-                                        </span>
+                                        </div>
                                     </SelectItem>
                                 );
                             })}

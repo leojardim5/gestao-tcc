@@ -48,37 +48,95 @@ public class IaSuggestionServiceImpl implements IaSuggestionService {
 
     @Override
     public AiSuggestionDto.SuggestionResponse sugerirOrientadores(AiSuggestionDto.SuggestionRequest request) {
+        System.out.println("🔧 ========== SERVICE: sugerirOrientadores INICIADO ==========");
+        System.out.println("📋 Request recebido no service:");
+        System.out.println("  - Aluno ID: " + request.getAlunoId());
+        System.out.println("  - Aluno Nome: " + request.getAlunoNome());
+        System.out.println("  - Curso: " + request.getCurso());
+        System.out.println("  - Título: " + request.getTitulo());
+        System.out.println("  - Tema: " + request.getTema());
+        
         List<Usuario> orientadoresDisponiveis = usuarioRepository.findByPapelAndDisponivelParaOrientacaoTrue(
                 PapelUsuario.ORIENTADOR
         );
+        System.out.println("👥 Orientadores disponíveis encontrados: " + orientadoresDisponiveis.size());
+        orientadoresDisponiveis.forEach(o -> {
+            System.out.println("  - " + o.getNome() + " (ID: " + o.getId() + ", Perfil: " + 
+                (o.getPerfilOrientador() != null ? o.getPerfilOrientador().substring(0, Math.min(50, o.getPerfilOrientador().length())) + "..." : "sem perfil") + ")");
+        });
+
+        System.out.println("⚙️ Configurações da IA:");
+        System.out.println("  - Enabled: " + properties.isEnabled());
+        System.out.println("  - Provider: " + properties.getProvider());
+        System.out.println("  - Model: " + properties.getModel());
+        System.out.println("  - API Key presente: " + (properties.getApiKey() != null && !properties.getApiKey().isBlank()));
 
         if (!properties.isEnabled() || properties.getApiKey() == null || properties.getApiKey().isBlank()) {
+            System.out.println("⚠️ IA desativada ou sem API key. Usando fallback.");
             log.warn("IA desativada ou sem API key configurada. Utilizando fallback.");
             return buildFallbackResponse(orientadoresDisponiveis, "IA desativada. Sugerindo orientadores com base em aderência ao perfil.", request);
         }
 
         try {
+            System.out.println("📝 Construindo prompt...");
             String prompt = buildPrompt(request, orientadoresDisponiveis);
+            System.out.println("📝 Prompt construído (tamanho: " + prompt.length() + " caracteres)");
+            System.out.println("📝 Primeiros 500 caracteres do prompt:");
+            System.out.println(prompt.substring(0, Math.min(500, prompt.length())) + "...");
 
+            System.out.println("🤖 Chamando provedor de IA: " + properties.getProvider());
             AiContentResult aiResult = switch (properties.getProvider()) {
-                case GEMINI -> callGemini(prompt);
-                case OPENAI -> callOpenAi(prompt);
+                case GEMINI -> {
+                    System.out.println("🔵 Chamando Gemini...");
+                    AiContentResult result = callGemini(prompt);
+                    System.out.println("🔵 Gemini retornou: " + (result != null ? "sucesso" : "null"));
+                    yield result;
+                }
+                case OPENAI -> {
+                    System.out.println("🟢 Chamando OpenAI...");
+                    AiContentResult result = callOpenAi(prompt);
+                    System.out.println("🟢 OpenAI retornou: " + (result != null ? "sucesso" : "null"));
+                    yield result;
+                }
             };
 
             if (aiResult == null || aiResult.content() == null || aiResult.content().isBlank()) {
+                System.out.println("⚠️ Conteúdo vazio retornado pela IA. Usando fallback.");
                 log.warn("Conteúdo vazio retornado pelo provedor IA. Aplicando fallback.");
                 return buildFallbackResponse(orientadoresDisponiveis, "IA retornou resposta vazia. Utilizando heurística local.", request);
             }
 
-            return parseAiContent(aiResult, orientadoresDisponiveis, request);
+            System.out.println("✅ Conteúdo recebido da IA (tamanho: " + aiResult.content().length() + " caracteres)");
+            System.out.println("📋 Primeiros 500 caracteres da resposta:");
+            System.out.println(aiResult.content().substring(0, Math.min(500, aiResult.content().length())) + "...");
+            System.out.println("🤖 Modelo usado: " + aiResult.modelo());
+            System.out.println("💬 Mensagem: " + aiResult.mensagemSistema());
+
+            System.out.println("🔍 Parseando conteúdo da IA...");
+            AiSuggestionDto.SuggestionResponse response = parseAiContent(aiResult, orientadoresDisponiveis, request);
+            System.out.println("✅ Parse concluído!");
+            System.out.println("📊 Sugestões geradas: " + (response.getSugestoes() != null ? response.getSugestoes().size() : 0));
+            System.out.println("🔧 ========== FIM SERVICE ==========");
+            return response;
         } catch (Exception ex) {
+            System.err.println("❌ ERRO no service!");
+            System.err.println("🚨 Exceção: " + ex.getClass().getName());
+            System.err.println("💬 Mensagem: " + ex.getMessage());
+            ex.printStackTrace();
             log.error("Erro ao consultar IA para sugestões de orientadores", ex);
+            System.out.println("🔄 Retornando fallback devido ao erro...");
             return buildFallbackResponse(orientadoresDisponiveis, "Falha ao consultar IA. Utilizando heurística local.", request);
         }
     }
 
     private AiContentResult callOpenAi(String prompt) throws Exception {
+        System.out.println("🟢 ========== CHAMANDO OPENAI ==========");
         String model = properties.getModel();
+        System.out.println("🤖 Modelo: " + model);
+        System.out.println("🌡️ Temperature: " + properties.getTemperature());
+        System.out.println("🔢 Max Tokens: " + properties.getMaxTokens());
+        System.out.println("🔗 URL: " + properties.resolveApiUrl());
+        
         OpenAiRequest payload = OpenAiRequest.builder()
                 .model(model)
                     .temperature(properties.getTemperature())
@@ -89,37 +147,57 @@ public class IaSuggestionServiceImpl implements IaSuggestionService {
                     ))
                     .build();
 
+        System.out.println("📦 Payload construído");
+        System.out.println("📝 System message (tamanho: " + buildSystemMessage().length() + ")");
+        System.out.println("📝 User prompt (tamanho: " + prompt.length() + ")");
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(properties.getApiKey());
+            System.out.println("🔑 Headers configurados (API Key presente: " + (properties.getApiKey() != null && !properties.getApiKey().isBlank()) + ")");
 
             RestTemplate restTemplate = restTemplateBuilder
                     .setConnectTimeout(Duration.ofSeconds(10))
                     .setReadTimeout(Duration.ofSeconds(30))
                     .build();
 
+            System.out.println("🌐 Fazendo requisição HTTP...");
+            long startTime = System.currentTimeMillis();
             ResponseEntity<String> response = restTemplate.exchange(
                 properties.resolveApiUrl(),
                 HttpMethod.POST,
                 new HttpEntity<>(payload, headers),
                 String.class
         );
+            long duration = System.currentTimeMillis() - startTime;
+            System.out.println("⏱️ Requisição concluída em " + duration + "ms");
+            System.out.println("📊 Status code: " + response.getStatusCode());
 
         if (response.getBody() == null) {
+            System.out.println("⚠️ Response body é null!");
             return null;
         }
+
+        System.out.println("📦 Response body recebido (tamanho: " + response.getBody().length() + ")");
+        System.out.println("📋 Primeiros 1000 caracteres:");
+        System.out.println(response.getBody().substring(0, Math.min(1000, response.getBody().length())));
 
         JsonNode root = objectMapper.readTree(response.getBody());
         JsonNode choices = root.path("choices");
         if (!choices.isArray() || choices.isEmpty()) {
+            System.out.println("⚠️ Choices vazio ou não é array!");
             return null;
         }
+        System.out.println("✅ Choices encontrado: " + choices.size() + " itens");
         JsonNode firstMessage = choices.get(0).path("message").path("content");
         if (firstMessage.isMissingNode()) {
+            System.out.println("⚠️ Message content não encontrado!");
             return null;
         }
         String content = firstMessage.asText();
+        System.out.println("✅ Content extraído (tamanho: " + content.length() + ")");
         String mensagem = "Sugestões geradas via OpenAI (" + model + ").";
+        System.out.println("🟢 ========== FIM OPENAI ==========");
         return new AiContentResult(content, mensagem, model);
     }
 
@@ -155,27 +233,48 @@ public class IaSuggestionServiceImpl implements IaSuggestionService {
                 .setReadTimeout(Duration.ofSeconds(30))
                 .build();
 
+        System.out.println("🔵 ========== CHAMANDO GEMINI ==========");
+        System.out.println("🔗 URL: " + url);
+        System.out.println("🤖 Modelo: " + model);
+        System.out.println("🌡️ Temperature: " + properties.getTemperature());
+        System.out.println("🔢 Max Tokens: " + properties.getMaxTokens());
+        System.out.println("📦 Payload construído");
+        
         try {
+            System.out.println("🌐 Fazendo requisição HTTP...");
+            long startTime = System.currentTimeMillis();
             ResponseEntity<String> response = restTemplate.exchange(
                     url,
                     HttpMethod.POST,
                     new HttpEntity<>(payload, headers),
                     String.class
             );
+            long duration = System.currentTimeMillis() - startTime;
+            System.out.println("⏱️ Requisição concluída em " + duration + "ms");
+            System.out.println("📊 Status code: " + response.getStatusCode());
 
             if (response.getBody() == null) {
+                System.out.println("⚠️ Response body é null!");
                 return null;
             }
+
+            System.out.println("📦 Response body recebido (tamanho: " + response.getBody().length() + ")");
+            System.out.println("📋 Primeiros 1000 caracteres:");
+            System.out.println(response.getBody().substring(0, Math.min(1000, response.getBody().length())));
 
             JsonNode root = objectMapper.readTree(response.getBody());
             JsonNode candidates = root.path("candidates");
             if (!candidates.isArray() || candidates.isEmpty()) {
+                System.out.println("⚠️ Candidates vazio ou não é array!");
                 return null;
             }
+            System.out.println("✅ Candidates encontrado: " + candidates.size() + " itens");
             JsonNode firstCandidate = candidates.get(0).path("content").path("parts");
             if (!firstCandidate.isArray() || firstCandidate.isEmpty()) {
+                System.out.println("⚠️ Parts vazio ou não é array!");
                 return null;
             }
+            System.out.println("✅ Parts encontrado: " + firstCandidate.size() + " itens");
 
             StringBuilder builder = new StringBuilder();
             for (JsonNode part : firstCandidate) {
@@ -184,8 +283,11 @@ public class IaSuggestionServiceImpl implements IaSuggestionService {
                     builder.append(text);
                 }
             }
+            String content = builder.toString();
+            System.out.println("✅ Content extraído (tamanho: " + content.length() + ")");
             String mensagem = "Sugestões geradas via Gemini (" + model + ").";
-            return new AiContentResult(builder.toString(), mensagem, model);
+            System.out.println("🔵 ========== FIM GEMINI ==========");
+            return new AiContentResult(content, mensagem, model);
         } catch (HttpClientErrorException.NotFound notFound) {
             if (allowFallback) {
                 String fallbackModel = "gemini-pro";
@@ -209,30 +311,76 @@ public class IaSuggestionServiceImpl implements IaSuggestionService {
     private AiSuggestionDto.SuggestionResponse parseAiContent(AiContentResult aiResult,
                                                               List<Usuario> orientadoresDisponiveis,
                                                               AiSuggestionDto.SuggestionRequest request) {
+        System.out.println("🔍 ========== PARSE AI CONTENT INICIADO ==========");
+        System.out.println("📋 Conteúdo bruto recebido (tamanho: " + aiResult.content().length() + "):");
+        System.out.println(aiResult.content());
+        
         try {
+            System.out.println("🔧 Extraindo JSON do conteúdo...");
             String jsonPayload = extractJsonFromContent(aiResult.content());
+            System.out.println("📦 JSON extraído (tamanho: " + jsonPayload.length() + "):");
+            System.out.println(jsonPayload);
 
-            List<AiSuggestionDto.AiSuggestion> sugestoes = objectMapper.readValue(
+            System.out.println("🔄 Parseando JSON para lista de sugestões...");
+            List<AiSuggestionResponseItem> itemsBrutos = objectMapper.readValue(
                     jsonPayload,
                     new TypeReference<List<AiSuggestionResponseItem>>() {
                     }
-            ).stream()
-                    .map(item -> mapToSuggestion(item, orientadoresDisponiveis))
-                    .filter(s -> s.getOrientadorId() != null)
+            );
+            System.out.println("📊 Itens brutos parseados: " + itemsBrutos.size());
+            itemsBrutos.forEach((item, idx) -> {
+                System.out.println("  Item " + (idx + 1) + ":");
+                System.out.println("    - orientadorId: " + item.orientadorId());
+                System.out.println("    - orientadorNome: " + item.orientadorNome());
+                System.out.println("    - score: " + item.score());
+                System.out.println("    - justificativa: " + item.justificativa());
+            });
+
+            System.out.println("🔄 Mapeando itens para sugestões...");
+            List<AiSuggestionDto.AiSuggestion> sugestoes = itemsBrutos.stream()
+                    .map(item -> {
+                        System.out.println("  Mapeando item: " + item.orientadorNome() + " (ID: " + item.orientadorId() + ")");
+                        return mapToSuggestion(item, orientadoresDisponiveis);
+                    })
+                    .filter(s -> {
+                        boolean valido = s.getOrientadorId() != null;
+                        if (!valido) {
+                            System.out.println("  ⚠️ Sugestão filtrada (sem orientadorId)");
+                        }
+                        return valido;
+                    })
                     .sorted(Comparator.comparingDouble(AiSuggestionDto.AiSuggestion::getScore).reversed())
                     .collect(Collectors.toList());
 
+            System.out.println("✅ Sugestões mapeadas: " + sugestoes.size());
+            sugestoes.forEach((sug, idx) -> {
+                System.out.println("  Sugestão " + (idx + 1) + ":");
+                System.out.println("    - ID: " + sug.getOrientadorId());
+                System.out.println("    - Nome: " + sug.getOrientadorNome());
+                System.out.println("    - Score: " + sug.getScore());
+                System.out.println("    - Justificativa: " + sug.getJustificativa());
+            });
+
             if (sugestoes.isEmpty()) {
+                System.out.println("⚠️ Nenhuma sugestão válida. Usando fallback.");
                 return buildFallbackResponse(orientadoresDisponiveis, "IA respondeu sem sugestões válidas. Utilizando heurística local.", request);
             }
 
-            return AiSuggestionDto.SuggestionResponse.builder()
+            AiSuggestionDto.SuggestionResponse response = AiSuggestionDto.SuggestionResponse.builder()
                     .sugestoes(sugestoes)
                     .modelo(aiResult.modelo())
                     .mensagemSistema(aiResult.mensagemSistema())
                     .build();
+            System.out.println("✅ Resposta construída com sucesso!");
+            System.out.println("🔍 ========== FIM PARSE AI CONTENT ==========");
+            return response;
         } catch (Exception ex) {
+            System.err.println("❌ ERRO ao parsear conteúdo da IA!");
+            System.err.println("🚨 Exceção: " + ex.getClass().getName());
+            System.err.println("💬 Mensagem: " + ex.getMessage());
+            ex.printStackTrace();
             log.error("Falha ao interpretar resposta da IA", ex);
+            System.out.println("🔄 Retornando fallback...");
             return buildFallbackResponse(orientadoresDisponiveis, "Falha ao interpretar resposta da IA. Utilizando heurística local.", request);
         }
     }
