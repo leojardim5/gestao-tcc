@@ -1,9 +1,11 @@
 package com.leonardo.gestaotcc.service;
 
+import com.leonardo.gestaotcc.dto.EmailNotificationData;
 import com.leonardo.gestaotcc.dto.SubmissaoDto;
 import com.leonardo.gestaotcc.entity.Submissao;
 import com.leonardo.gestaotcc.entity.Tcc;
 import com.leonardo.gestaotcc.enums.StatusSubmissao;
+import com.leonardo.gestaotcc.enums.TipoNotificacao;
 import com.leonardo.gestaotcc.exception.BusinessException;
 import com.leonardo.gestaotcc.exception.ResourceNotFoundException;
 import com.leonardo.gestaotcc.mapper.SubmissaoMapper;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +30,7 @@ public class SubmissaoServiceImpl implements SubmissaoService {
     private final SubmissaoRepository submissaoRepository;
     private final TccRepository tccRepository;
     private final SubmissaoMapper submissaoMapper;
+    private final NotificacaoService notificacaoService;
 
     @Override
     @Transactional
@@ -43,6 +47,38 @@ public class SubmissaoServiceImpl implements SubmissaoService {
         submissao.setStatus(StatusSubmissao.EM_REVISAO);
 
         submissao = submissaoRepository.save(submissao);
+        
+        // Notificar orientador sobre nova submissão
+        if (tcc.getOrientador() != null) {
+            String mensagem = String.format(
+                "Nova submissão (versão %d) recebida para o TCC: %s",
+                proximaVersao,
+                tcc.getTitulo()
+            );
+            
+            // Preparar dados extras para o email
+            EmailNotificationData dadosEmail = EmailNotificationData.builder()
+                    .tituloTcc(tcc.getTitulo())
+                    .tema(tcc.getTema())
+                    .curso(tcc.getCurso())
+                    .resumo(tcc.getResumo())
+                    .nomeAluno(tcc.getAluno() != null ? tcc.getAluno().getNome() : null)
+                    .emailAluno(tcc.getAluno() != null ? tcc.getAluno().getEmail() : null)
+                    .nomeOrientador(tcc.getOrientador() != null ? tcc.getOrientador().getNome() : null)
+                    .emailOrientador(tcc.getOrientador() != null ? tcc.getOrientador().getEmail() : null)
+                    .versao(proximaVersao)
+                    .status("EM_REVISAO")
+                    .dataHora(LocalDateTime.now())
+                    .build();
+            
+            notificacaoService.push(
+                tcc.getOrientador().getId(),
+                TipoNotificacao.COMENTARIO,
+                mensagem,
+                dadosEmail
+            );
+        }
+        
         return submissaoMapper.toResponse(submissao);
     }
 
@@ -58,6 +94,41 @@ public class SubmissaoServiceImpl implements SubmissaoService {
 
         submissao.setStatus(status);
         submissao = submissaoRepository.save(submissao);
+        
+        // Notificar aluno sobre a decisão da submissão
+        Tcc tcc = submissao.getTcc();
+        if (tcc != null && tcc.getAluno() != null) {
+            String statusTexto = status == StatusSubmissao.APROVADO ? "aprovada" : "reprovada";
+            String mensagem = String.format(
+                "Sua submissão (versão %d) do TCC '%s' foi %s",
+                submissao.getVersao(),
+                tcc.getTitulo(),
+                statusTexto
+            );
+            
+            // Preparar dados extras para o email
+            EmailNotificationData dadosEmail = EmailNotificationData.builder()
+                    .tituloTcc(tcc.getTitulo())
+                    .tema(tcc.getTema())
+                    .curso(tcc.getCurso())
+                    .resumo(tcc.getResumo())
+                    .nomeAluno(tcc.getAluno() != null ? tcc.getAluno().getNome() : null)
+                    .emailAluno(tcc.getAluno() != null ? tcc.getAluno().getEmail() : null)
+                    .nomeOrientador(tcc.getOrientador() != null ? tcc.getOrientador().getNome() : null)
+                    .emailOrientador(tcc.getOrientador() != null ? tcc.getOrientador().getEmail() : null)
+                    .versao(submissao.getVersao())
+                    .status(status.toString())
+                    .dataHora(LocalDateTime.now())
+                    .build();
+            
+            notificacaoService.push(
+                tcc.getAluno().getId(),
+                TipoNotificacao.COMENTARIO,
+                mensagem,
+                dadosEmail
+            );
+        }
+        
         return submissaoMapper.toResponse(submissao);
     }
 

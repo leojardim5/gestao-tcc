@@ -1,5 +1,6 @@
 package com.leonardo.gestaotcc.service;
 
+import com.leonardo.gestaotcc.dto.EmailNotificationData;
 import com.leonardo.gestaotcc.dto.convite.ConviteResponseDto;
 import com.leonardo.gestaotcc.dto.convite.EnviarConviteDto;
 import com.leonardo.gestaotcc.dto.convite.ResponderConviteDto;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -84,7 +86,22 @@ public class ConviteOrientacaoService {
             tcc.getTitulo()
         );
         
-        notificacaoService.push(orientador.getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemNotificacao);
+        // Preparar dados extras para o email
+        EmailNotificationData dadosEmail = EmailNotificationData.builder()
+                .tituloTcc(tcc.getTitulo())
+                .tema(tcc.getTema())
+                .curso(tcc.getCurso())
+                .resumo(tcc.getResumo())
+                .nomeAluno(aluno.getNome())
+                .emailAluno(aluno.getEmail())
+                .nomeOrientador(orientador.getNome())
+                .emailOrientador(orientador.getEmail())
+                .mensagemPersonalizada(dto.getMensagem())
+                .status(tcc.getStatus().toString())
+                .dataHora(LocalDateTime.now())
+                .build();
+        
+        notificacaoService.push(orientador.getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemNotificacao, dadosEmail);
 
         return conviteOrientacaoMapper.toResponse(convite);
     }
@@ -119,8 +136,23 @@ public class ConviteOrientacaoService {
                 tcc.getTitulo(),
                 convite.getOrientador().getNome()
             );
+            
+            // Preparar dados extras para o email
+            EmailNotificationData dadosEmailAceito = EmailNotificationData.builder()
+                    .tituloTcc(tcc.getTitulo())
+                    .tema(tcc.getTema())
+                    .curso(tcc.getCurso())
+                    .resumo(tcc.getResumo())
+                    .nomeAluno(convite.getAluno().getNome())
+                    .emailAluno(convite.getAluno().getEmail())
+                    .nomeOrientador(convite.getOrientador().getNome())
+                    .emailOrientador(convite.getOrientador().getEmail())
+                    .status(tcc.getStatus().toString())
+                    .dataHora(LocalDateTime.now())
+                    .build();
+            
             // Notificar aluno
-            notificacaoService.push(convite.getAluno().getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemAceito);
+            notificacaoService.push(convite.getAluno().getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemAceito, dadosEmailAceito);
         } else {
             // Quando rejeitado, remover convite e TCC do aluno
             Tcc tcc = convite.getTcc();
@@ -135,7 +167,23 @@ public class ConviteOrientacaoService {
             );
             String motivo = dto.getMotivo();
             String mensagemRejeitado = (motivo != null && !motivo.isBlank()) ? base + " Motivo: " + motivo : base;
-            notificacaoService.push(convite.getAluno().getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemRejeitado);
+            
+            // Preparar dados extras para o email
+            EmailNotificationData dadosEmailRejeitado = EmailNotificationData.builder()
+                    .tituloTcc(tcc.getTitulo())
+                    .tema(tcc.getTema())
+                    .curso(tcc.getCurso())
+                    .resumo(tcc.getResumo())
+                    .nomeAluno(convite.getAluno().getNome())
+                    .emailAluno(convite.getAluno().getEmail())
+                    .nomeOrientador(convite.getOrientador().getNome())
+                    .emailOrientador(convite.getOrientador().getEmail())
+                    .mensagemPersonalizada(motivo != null && !motivo.isBlank() ? "Motivo da rejeição: " + motivo : null)
+                    .status("REJEITADO")
+                    .dataHora(LocalDateTime.now())
+                    .build();
+            
+            notificacaoService.push(convite.getAluno().getId(), TipoNotificacao.CONVITE_ORIENTACAO, mensagemRejeitado, dadosEmailRejeitado);
 
             // Excluir primeiro o convite para evitar referências, depois o TCC
             conviteOrientacaoRepository.delete(convite);

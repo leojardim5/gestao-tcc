@@ -140,6 +140,9 @@ export interface Tcc {
     curso: string;
     dataInicio: string; // ISO Date string
     dataEntregaPrevista?: string; // ISO Date string
+    googleFileId?: string | null;
+    googleWebViewLink?: string | null;
+    googleWebEditLink?: string | null;
     criadoEm: string; // ISO Date string
     atualizadoEm: string; // ISO Date string
 }

@@ -1,11 +1,36 @@
 spring:
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USER}
+    url: ${DATABASE_URL}
+    username: ${DB_USER:postgres}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: validate
-  flyway:
-    enabled: false
+    show-sql: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+server:
+  port: ${PORT:8080}
+
+app:
+  name: ${APP_NAME:Gestão TCC}
+
+cursor:
+  ai:
+    enabled: ${CURSOR_AI_ENABLED:false}
+    api-key: ${CURSOR_AI_API_KEY:}
+    api-url: ${CURSOR_AI_API_URL:https://api.openai.com/v1/chat/completions}
+    model: ${CURSOR_AI_MODEL:cursor-small-latest}
+    provider: ${CURSOR_AI_PROVIDER:OPENAI}
